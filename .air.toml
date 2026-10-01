@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "build"
+
+[build]
+cmd = "go build -o ./build/smart_budget ./cmd/main.go"
+entrypoint = "./build/smart_budget"
+delay = 2000
+include_dir = ["cmd", "internal"]
+exclude_regex = ["_test\\.go"]
+
+[log]
+time = false
+
+[misc]
+clean_on_exit = true
