@@ -1,0 +1,36 @@
+name: Go
+
+on: [push, pull_request]
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "stable"
+
+      - name: Build
+        run: go build -o /dev/null ./cmd/main.go
+
+      - name: Test
+        run: go test ./cmd/... ./internal/...
+
+  Lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: GolangCI-Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          install-mode: binary
+          args: ./cmd/... ./internal/...
