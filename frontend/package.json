@@ -1,0 +1,29 @@
+{
+  "name": "smart-budget-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit && prettier --check src index.html vite.config.ts tsconfig.json package.json",
+    "lint-fix": "prettier --write src index.html vite.config.ts tsconfig.json package.json"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "prettier": "3.6.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  }
+}

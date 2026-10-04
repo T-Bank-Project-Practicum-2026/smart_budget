@@ -1,0 +1,33 @@
+digraph Architecture {
+  graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.6, ranksep=0.8,
+    splines=polyline, dpi=180];
+  node [shape=component, fontname="Helvetica", fontsize=15,
+    color="#343A40", fontcolor="#202428", penwidth=1.2,
+    margin="0.20,0.15", height=0.65];
+  edge [fontname="Helvetica", fontsize=11, color="#677078",
+    fontcolor="#677078", arrowsize=0.7, penwidth=1.2];
+
+  web [label="Web\nReact + TypeScript"];
+  nginx [label="Nginx"];
+  api [label="Go API"];
+  db [shape=cylinder, label="PostgreSQL"];
+  worker [label="Go Worker"];
+  kafka [label="Kafka"];
+  notifications [label="Notifications\nGo microservice"];
+  push [label="Web Push"];
+  bank [label="Pseudo-bank"];
+
+  { rank=same; web; nginx; api; db; }
+  { rank=same; push; notifications; kafka; worker; }
+
+  web -> nginx [label="HTTPS"];
+  nginx -> api [label="/api"];
+  api -> db [label="SQL"];
+  db -> worker [dir=both, label="outbox"];
+  kafka -> worker [dir=back, label="publish"];
+  notifications -> kafka [dir=back, label="consume"];
+  push -> notifications [dir=back, color="#2463A0"];
+  push -> web [label="push", color="#2463A0", fontcolor="#2463A0", constraint=false];
+  worker -> bank [label="sync"];
+  web -> push [style=invis];
+}
