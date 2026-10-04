@@ -36,16 +36,7 @@ make up
 
 ## Frontend
 
-Из `frontend/`, с Node.js 22.12+ и npm:
-
-```sh
-npm ci
-npm run dev
-```
-
-Для разработки frontend запустите `make up`. Vite открывает страницу на http://localhost:5173 и отправляет `/api/` через nginx на порту 3000. Если порт Docker-приложения изменён, задайте его через `API_PROXY_TARGET=http://localhost:3002 npm run dev`.
-
-`npm run build` проверяет типы и собирает `dist/`. Docker раздаёт эту сборку через nginx. Исходники страницы — `frontend/src/`.
+Для разработки/тестов frontend запустите `make up`.
 
 ## Документы
 
