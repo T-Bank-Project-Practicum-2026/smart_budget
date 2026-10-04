@@ -1,36 +1,78 @@
-name: Go
+name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  Test:
+  backend:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: backend
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Install Go
-        uses: actions/setup-go@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "stable"
-
-      - name: Build
-        run: go build -o /dev/null ./cmd/main.go
-
-      - name: Test
-        run: go test ./cmd/... ./internal/...
-
-  Lint:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: GolangCI-Lint
+          go-version-file: backend/go.mod
+          cache: false
+      - name: Lint Go
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
-          install-mode: binary
-          args: ./cmd/... ./internal/...
+          version: v2.13.2
+          working-directory: backend
+          args: --timeout=5m ./...
+      - name: Test Go
+        run: go test -race -count=1 ./...
+      - name: Build Go
+        run: go build ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Configure local database password
+        run: python3 -c 'import secrets; from pathlib import Path; Path(".env").write_text("POSTGRES_PASSWORD=" + secrets.token_hex(24) + "\n")'
+      - name: Validate Compose
+        run: docker compose config --quiet
+      - name: Build and start
+        run: make up
+      - name: Apply migrations
+        run: make migrate && make migrate
+      - name: Test Go with Kafka and PostgreSQL
+        run: make test
+      - name: Smoke test frontend and API proxy
+        run: |
+          curl --fail --retry 3 http://localhost:3000/ | grep -q 'Smart Budget'
+          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "smart_budget"'
+      - name: Smoke test notifications
+        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "notifications"'
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color
+      - name: Stop
+        if: always()
+        run: docker compose down --remove-orphans

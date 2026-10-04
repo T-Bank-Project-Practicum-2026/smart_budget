@@ -1,0 +1,57 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #222;
+  background: #f5f5f5;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 440px;
+  margin: 12vh auto;
+  padding: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.description {
+  margin: 0;
+  color: #666;
+}
+
+.status {
+  margin: 32px 0 16px;
+}
+
+.ok {
+  color: #237340;
+}
+
+.error {
+  color: #b42318;
+}
+
+button {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #ffdd2d;
+  color: #222;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+button:focus-visible {
+  outline: 2px solid #222;
+  outline-offset: 3px;
+}
