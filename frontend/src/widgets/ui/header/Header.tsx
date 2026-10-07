@@ -6,10 +6,12 @@ import HeaderButton from "../../../shared/ui/HeaderButton";
 export default function Header() {
   return (
     <header className={styles.container}>
-      <HeaderButton>Бюжет</HeaderButton>
-      <HeaderButton notification={5}>Цели</HeaderButton>
-      <HeaderButton>Инвестиции</HeaderButton>
-      <HeaderButton>Уведомления</HeaderButton>
+      <HeaderButton endpoint="/butget">Бюжет</HeaderButton>
+      <HeaderButton endpoint="/goals" notification={5}>
+        Цели
+      </HeaderButton>
+      <HeaderButton endpoint="">Инвестиции</HeaderButton>
+      <HeaderButton endpoint="">Уведомления</HeaderButton>
     </header>
   );
 }

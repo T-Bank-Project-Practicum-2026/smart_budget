@@ -5,12 +5,16 @@ import ExpensesWrapper from "../../shared/ui/ExpensesWrapper/ExpensesWrapper";
 
 export default function BudgetPage() {
   return (
-    <Container>
-      <h1>Бюджет на октябрь</h1>
+    <>
+      <Container>
+        <h1>Бюджет на октябрь</h1>
+      </Container>
       <RadialChart />
-      <h2>Расходы по категориям в октябре</h2>
-      <CategoryBadgeWrapper />
-      <ExpensesWrapper />
-    </Container>
+      <Container>
+        <h2>Расходы по категориям в октябре</h2>
+        <CategoryBadgeWrapper />
+        <ExpensesWrapper />
+      </Container>
+    </>
   );
 }
