@@ -17,7 +17,7 @@ help:
 	@echo "make test      Run Go and frontend tests in Docker"
 
 init:
-	docker run --rm -v "$(CURDIR):/workspace" -w /workspace/backend golang:1.27.1-alpine go run ./cmd/setup
+	docker run --rm -v "$(CURDIR):/workspace" -w /workspace/backend golang:1.27-alpine go run ./cmd/setup
 
 up: init
 	$(COMPOSE) up --detach --wait --wait-timeout 180 postgres kafka
