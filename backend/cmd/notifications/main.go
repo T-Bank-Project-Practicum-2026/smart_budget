@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"crypto/ecdh"
+	"encoding/base64"
 	"errors"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"smart_budget/internal/kafka"
 	"smart_budget/internal/notifications"
+	"smart_budget/internal/postgres"
+	"smart_budget/internal/push"
+	app "smart_budget/internal/runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -28,64 +31,48 @@ func run() error {
 
 	defer stop()
 
-	brokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
+	settings := map[string]string{}
 
-	for i, broker := range brokers {
-		brokers[i] = strings.TrimSpace(broker)
-		if brokers[i] == "" {
-			return errors.New("KAFKA_BROKERS must contain non-empty broker addresses")
+	for _, key := range []string{"KAFKA_BROKERS", "NOTIFICATIONS_TOKEN", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "AUTH_API_URL"} {
+		value, err := app.Required(key)
+		if err != nil {
+			return err
 		}
+
+		settings[key] = value
 	}
 
-	client, err := kafka.NewClient(brokers, kgo.ClientID("notifications"))
+	privateBytes, err := base64.RawURLEncoding.DecodeString(settings["VAPID_PRIVATE_KEY"])
 	if err != nil {
-		return fmt.Errorf("create Kafka client: %w", err)
+		return errors.New("invalid VAPID private key")
+	}
+
+	private, err := ecdh.P256().NewPrivateKey(privateBytes)
+	if err != nil {
+		return errors.New("invalid VAPID private key")
+	}
+
+	if base64.RawURLEncoding.EncodeToString(private.PublicKey().Bytes()) != settings["VAPID_PUBLIC_KEY"] {
+		return errors.New("VAPID keys do not match")
+	}
+
+	dbctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+
+	defer cancel()
+
+	db, err := postgres.NewPool(dbctx, "")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	client, err := kafka.NewClient(strings.Split(settings["KAFKA_BROKERS"], ","), kgo.ClientID("notifications"), kgo.ConsumerGroup("notifications-v1"), kgo.ConsumeTopics(push.Topic), kgo.DisableAutoCommit(), kgo.BlockRebalanceOnPoll())
+	if err != nil {
+		return err
 	}
 	defer client.Close()
 
-	pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	err = client.Ping(pingCtx)
+	svc := &notifications.Service{DB: db, Token: settings["NOTIFICATIONS_TOKEN"], PublicKey: settings["VAPID_PUBLIC_KEY"], PrivateKey: settings["VAPID_PRIVATE_KEY"], Subject: settings["VAPID_SUBJECT"], HTTPClient: notifications.PushHTTPClient(), SessionURL: settings["AUTH_API_URL"]}
 
-	cancel()
-	if err != nil {
-		return fmt.Errorf("connect to Kafka: %w", err)
-	}
-
-	addr := os.Getenv("HTTP_ADDR")
-	if addr == "" {
-		addr = ":8080"
-	}
-
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           notifications.NewHandler(),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       60 * time.Second,
-	}
-
-	errCh := make(chan error, 1)
-
-	go func() {
-		log.Printf("notifications HTTP server listening on %s", addr)
-
-		errCh <- srv.ListenAndServe()
-	}()
-
-	select {
-	case err := <-errCh:
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
-
-		return err
-
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
-		defer cancel()
-
-		return srv.Shutdown(shutdownCtx)
-	}
+	return app.Serve(ctx, svc.Handler(), svc.Consume(client), svc.Deliver, svc.Maintain)
 }

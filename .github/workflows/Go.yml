@@ -48,14 +48,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build
 
   docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Configure local database password
-        run: python3 -c 'import secrets; from pathlib import Path; Path(".env").write_text("POSTGRES_PASSWORD=" + secrets.token_hex(24) + "\n")'
+      - name: Check generated SQL queries
+        run: make check-generated
+      - name: Configure local environment
+        run: make init
       - name: Validate Compose
         run: docker compose config --quiet
       - name: Build and start

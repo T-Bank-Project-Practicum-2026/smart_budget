@@ -10,8 +10,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit && prettier --check src index.html vite.config.ts tsconfig.json package.json",
-    "lint-fix": "prettier --write src index.html vite.config.ts tsconfig.json package.json"
+    "lint": "tsc --noEmit && prettier --check src tests public index.html vite.config.ts tsconfig.json package.json",
+    "lint-fix": "prettier --write src tests public index.html vite.config.ts tsconfig.json package.json",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
     "react": "19.3.0",

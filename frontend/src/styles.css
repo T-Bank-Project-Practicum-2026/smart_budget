@@ -24,18 +24,6 @@ h1 {
   color: #666;
 }
 
-.status {
-  margin: 32px 0 16px;
-}
-
-.ok {
-  color: #237340;
-}
-
-.error {
-  color: #b42318;
-}
-
 button {
   padding: 10px 16px;
   border: 0;
@@ -54,4 +42,63 @@ button:disabled {
 button:focus-visible {
   outline: 2px solid #222;
   outline-offset: 3px;
+}
+
+section {
+  margin-top: 32px;
+}
+h2 {
+  font-size: 20px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.notices {
+  padding: 0;
+  list-style: none;
+}
+.notices li {
+  padding: 16px 0;
+  border-bottom: 1px solid #ddd;
+}
+.notices p {
+  margin: 6px 0;
+}
+time {
+  color: #666;
+  font-size: 13px;
+}
+
+form,
+label {
+  display: grid;
+  gap: 8px;
+}
+form {
+  gap: 16px;
+}
+input {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  font: inherit;
+}
+input:focus-visible {
+  outline: 2px solid #222;
+  outline-offset: 2px;
+}
+.secondary {
+  background: #e6e6e6;
+}
+.account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.account p {
+  overflow-wrap: anywhere;
 }
