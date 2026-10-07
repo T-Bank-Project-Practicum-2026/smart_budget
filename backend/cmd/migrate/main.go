@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/signal"
@@ -61,18 +63,56 @@ func run() error {
 			return err
 		}
 
-		log.Printf("applied migrations: %d", len(applied))
-
-		return nil
+		log.Printf("applied app migrations: %d", len(applied))
 	}
 
-	status, err := provider.Status(ctx)
+	notificationFiles, err := fs.Sub(migrations.Files, "notifications")
 	if err != nil {
 		return err
 	}
 
-	for _, migration := range status {
-		log.Printf("%s: %s", migration.Source.Path, migration.State)
+	notificationProvider, err := goose.NewProvider(goose.DialectPostgres, db, notificationFiles, goose.WithTableName("notifications.goose_db_version"), goose.WithSessionLocker(locker))
+	if err != nil {
+		return err
+	}
+
+	if os.Args[1] == "up" {
+		applied, err := notificationProvider.Up(ctx)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("applied notifications migrations: %d", len(applied))
+
+		for role, variable := range map[string]string{"budget_api": "API_DB_PASSWORD", "budget_worker": "WORKER_DB_PASSWORD", "budget_notifications": "NOTIFICATIONS_DB_PASSWORD"} {
+			password := os.Getenv(variable)
+			if password == "" {
+				return fmt.Errorf("%s is required", variable)
+			}
+
+			var statement string
+
+			if err := pool.QueryRow(ctx, "SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', $1::text, $2::text)", role, password).Scan(&statement); err != nil {
+				return errors.New("cannot configure database role")
+			}
+
+			if _, err := pool.Exec(ctx, statement); err != nil {
+				return errors.New("cannot configure database role")
+			}
+		}
+
+		return nil
+	}
+
+	for _, p := range []*goose.Provider{provider, notificationProvider} {
+		status, err := p.Status(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, migration := range status {
+			log.Printf("%s: %s", migration.Source.Path, migration.State)
+		}
 	}
 
 	return nil

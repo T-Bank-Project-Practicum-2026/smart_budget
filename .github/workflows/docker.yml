@@ -1,9 +1,9 @@
 name: Docker CI
 on:
   push:
-    paths: ['compose.yml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
+    paths: ['compose.yaml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
   pull_request:
-    paths: ['compose.yml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
+    paths: ['compose.yaml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
 
 permissions:
   contents: read
@@ -18,8 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Configure local database password
-        run: python3 -c 'import secrets; from pathlib import Path; Path(".env").write_text("POSTGRES_PASSWORD=" + secrets.token_hex(24) + "\n")'
+      - name: Check generated SQL queries
+        run: make check-generated
+
+      - name: Configure local environment
+        run: make init
 
       - name: Validate Compose
         run: docker compose config --quiet
