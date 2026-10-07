@@ -22,13 +22,13 @@ var mccRegistry = map[string]Category{
 
 func DetectCategory(code string) Category {
 	cleanCode := strings.TrimSpace(code)
-	category, exists := mccRegistry[cleanCode]
 
-	if !exists {
-		return Category{
-			Name:  "Неизвестный МСС-код",
-			Group: "Другое",
-		}
+	if category, exists := mccRegistry[cleanCode]; exists {
+		return category
 	}
-	return category
+
+	return Category{
+		Name:  "Неизвестный MCC-код",
+		Group: "Разное",
+	}
 }
