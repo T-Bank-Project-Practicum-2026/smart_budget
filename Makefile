@@ -9,7 +9,7 @@ help:
 	@echo "make init      Generate missing local secrets in .env"
 	@echo "make migrate   Apply SQL migrations"
 	@echo "make migrate-status  Show migration status"
-	@echo "make up        Build and start frontend + API + worker + notifications + Kafka + PostgreSQL"
+	@echo "make up        Build and start frontend + API + worker + notifications + Redpanda + PostgreSQL"
 	@echo "make down      Stop containers (preserve volumes)"
 	@echo "make logs      Follow service logs"
 	@echo "make lint      Check Go and frontend using Docker"
