@@ -1,6 +1,6 @@
 # Smart Budget
 
-Go backend и frontend на React + TypeScript. На backend работают регистрация/вход по email и паролю, JWT + refresh-сессии и Web Push: подписка через API, outbox → Kafka → notifications. Frontend — макет бюджета из main, авторизация и push к нему пока не подключены. PostgreSQL — pgx, sqlc и goose. Есть базовые users, auth_sessions, ledger_periods и audit_log; финансовые функции пока в плане.
+Go backend и frontend на React + TypeScript. На backend работают регистрация/вход по email и паролю, JWT + refresh-сессии и Web Push: подписка через API, outbox → Redpanda → notifications. Frontend — макет бюджета из main, авторизация и push к нему пока не подключены. PostgreSQL — pgx, sqlc и goose. Есть базовые users, auth_sessions, ledger_periods и audit_log; финансовые функции пока в плане.
 
 ## Контекст по задаче
 
@@ -13,7 +13,7 @@ Go backend и frontend на React + TypeScript. На backend работают р
 ## Устройство проекта
 
 - Go-модуль — `backend/`; Go-команды выполняются оттуда. Корневой `go.work` подключает модуль для IDE.
-- Архитектура: один Go-модуль, отдельные контейнеры API, worker и notifications. Worker публикует outbox в Kafka; notifications потребляет события и отправляет push.
+- Архитектура: один Go-модуль, отдельные контейнеры API, worker и notifications. Worker публикует outbox в Redpanda по Kafka-протоколу; notifications потребляет события и отправляет push.
 - SQL сервисов — `backend/queries/`; методы генерируются sqlc в `backend/internal/db/`. После изменения SQL или миграций запускай `make generate`; сгенерированные файлы не редактируй вручную. Административный DDL мигратора и проверочные запросы тестов остаются вне sqlc.
 - Frontend — `frontend/src/`, обычный CSS и `fetch`. Пакеты, интерфейсы и зависимости добавляй под текущую задачу.
 - При переносе файлов учитывай Docker, Makefile, CI и README. Backend доступен через nginx `/api/`, без отдельного порта на хосте.
@@ -34,8 +34,8 @@ Go backend и frontend на React + TypeScript. На backend работают р
 
 - `make generate` — генерация sqlc в Docker; `make check-generated` — проверка актуальности, также запускается в CI.
 - `make lint` — golangci-lint и frontend lint; `make lint-fix` — автоисправления.
-- `make test` — Go-тесты и проверки настоящих Kafka и PostgreSQL.
-- `make up` — сборка и запуск API, frontend, worker, notifications, Kafka и PostgreSQL. Приложение — `http://localhost:3000`, health — `/api/health`.
+- `make test` — Go-тесты и проверки настоящих Redpanda и PostgreSQL.
+- `make up` — сборка и запуск API, frontend, worker, notifications, Redpanda и PostgreSQL. Приложение — `http://localhost:3000`, health — `/api/health`.
 - `make migrate` — применить SQL-миграции; `make migrate-status` — их состояние.
 - `make logs` — логи; `make down` — остановка с сохранением данных.
 - DB/Kafka: затронутые сценарии транзакций, повторной обработки и восстановления проверяются на настоящих сервисах.

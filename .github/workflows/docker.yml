@@ -33,7 +33,7 @@ jobs:
       - name: Apply migrations
         run: make migrate && make migrate
 
-      - name: Test Go with Kafka and PostgreSQL
+      - name: Test Go with Redpanda and PostgreSQL
         run: make test
 
       - name: Smoke test frontend and API proxy

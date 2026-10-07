@@ -41,40 +41,44 @@ services:
       disable: true
 
   kafka:
-    image: apache/kafka:4.3.1
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.3
     restart: unless-stopped
-    environment:
-      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    mem_limit: 768m
+    cpus: 1
+    command:
+      - redpanda
+      - start
+      - --mode
+      - dev-container
+      - --smp
+      - '1'
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --kafka-addr
+      - 0.0.0.0:9092
+      - --advertise-kafka-addr
+      - kafka:9092
+      - --set
+      - redpanda.auto_create_topics_enabled=false
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - redpanda_data:/var/lib/redpanda/data
     healthcheck:
-      test: ['CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka:9092', '--list']
+      test: ['CMD', 'rpk', 'cluster', 'info', '-X', 'brokers=127.0.0.1:9092']
       interval: 10s
-      timeout: 10s
-      start_period: 30s
+      timeout: 5s
+      start_period: 20s
       retries: 10
 
   kafka-init:
-    image: apache/kafka:4.3.1
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.3
     profiles: ['tools']
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: ['/opt/kafka/bin/kafka-topics.sh']
-    command: ['--bootstrap-server', 'kafka:9092', '--create', '--if-not-exists', '--topic', 'notifications.requested.v1', '--partitions', '3', '--replication-factor', '1']
+    entrypoint: ['rpk']
+    command: ['topic', 'create', 'notifications.requested.v1', '--if-not-exists', '--partitions', '3', '--replicas', '1', '-X', 'brokers=kafka:9092']
 
   worker:
     build:
@@ -205,7 +209,7 @@ services:
 
 volumes:
   postgres_data:
-  kafka_data:
+  redpanda_data:
   go_modules:
   go_build:
   go_lint:
