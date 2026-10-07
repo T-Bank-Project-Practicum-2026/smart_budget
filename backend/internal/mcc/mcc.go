@@ -22,7 +22,6 @@ var mccRegistry = map[string]Category{
 
 func DetectCategory(code string) Category {
 	cleanCode := strings.TrimSpace(code)
-
 	category, exists := mccRegistry[cleanCode]
 
 	if !exists {
