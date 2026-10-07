@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+
+  & a {
+    font-weight: 500;
+  }
+}
+
+.title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.categories {
+  display: flex;
+  flex-direction: row;
+}
+
+.category {
+  &:not(:first-child) {
+    margin-left: -12px;
+  }
+}
