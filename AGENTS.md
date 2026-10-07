@@ -1,6 +1,6 @@
 # Smart Budget
 
-Go backend и простой frontend на React + TypeScript. Работают регистрация/вход по email и паролю, JWT + refresh-сессии и демо Web Push: подписка, отправка по кнопке, outbox → Kafka → notifications. PostgreSQL — pgx, sqlc и goose. Есть базовые users, auth_sessions, ledger_periods и audit_log; финансовые функции пока в плане.
+Go backend и frontend на React + TypeScript. На backend работают регистрация/вход по email и паролю, JWT + refresh-сессии и Web Push: подписка через API, outbox → Kafka → notifications. Frontend — макет бюджета из main, авторизация и push к нему пока не подключены. PostgreSQL — pgx, sqlc и goose. Есть базовые users, auth_sessions, ledger_periods и audit_log; финансовые функции пока в плане.
 
 ## Контекст по задаче
 

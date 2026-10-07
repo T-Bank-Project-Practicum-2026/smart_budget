@@ -14,7 +14,7 @@ help:
 	@echo "make logs      Follow service logs"
 	@echo "make lint      Check Go and frontend using Docker"
 	@echo "make lint-fix  Format and fix Go and frontend using Docker"
-	@echo "make test      Run Go and frontend tests in Docker"
+	@echo "make test      Run Go tests in Docker"
 
 init:
 	docker run --rm -v "$(CURDIR):/workspace" -w /workspace/backend golang:1.27-alpine go run ./cmd/setup
@@ -42,7 +42,6 @@ lint-fix:
 
 test:
 	$(COMPOSE) run --rm test-go
-	$(COMPOSE) run --rm lint-frontend 'npm ci && npm test'
 
 migrate:
 	$(COMPOSE) run --build --rm migrate up
