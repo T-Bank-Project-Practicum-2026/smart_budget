@@ -13,7 +13,7 @@ type Event struct {
 	UserID    string    `json:"userId"`
 	Title     string    `json:"title"`
 	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"createdAt" format:"date-time"`
 }
 
 func Decode(data []byte) (Event, error) {

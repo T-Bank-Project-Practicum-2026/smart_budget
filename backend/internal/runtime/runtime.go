@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -35,6 +36,11 @@ func LogError(operation string, err error) {
 	slog.Error("operation failed", "operation", operation, "error_type", fmt.Sprintf("%T", err), "sqlstate", code)
 }
 
+// @Summary Готовность API
+// @Tags Состояние сервиса
+// @Success 204 "Выполнено, без тела ответа"
+// @Failure 503 "PostgreSQL недоступен"
+// @Router /api/ready [get]
 func Ready(check func(context.Context) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -96,9 +102,19 @@ func Serve(ctx context.Context, handler http.Handler, workers ...func(context.Co
 	return group.Wait()
 }
 
+type HealthResponse struct {
+	Status  string `json:"status" example:"ok"`
+	Service string `json:"service" example:"smart_budget"`
+}
+
+// @Summary Проверка API
+// @Tags Состояние сервиса
+// @Produce json
+// @Success 200 {object} HealthResponse "Сервис работает"
+// @Router /api/health [get]
 func Health(service string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","service":"` + service + `"}`))
+		_ = json.NewEncoder(w).Encode(HealthResponse{Status: "ok", Service: service})
 	}
 }

@@ -14,9 +14,9 @@ import (
 
 type User struct {
 	ID        string    `json:"id"`
-	Email     string    `json:"email"`
+	Email     string    `json:"email" format:"email"`
 	Timezone  string    `json:"timezone"`
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"createdAt" format:"date-time"`
 }
 
 type Session struct {

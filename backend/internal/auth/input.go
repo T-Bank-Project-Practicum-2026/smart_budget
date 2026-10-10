@@ -19,13 +19,13 @@ var (
 )
 
 type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" format:"email" maxLength:"254"`
+	Password string `json:"password" format:"password" minLength:"8" maxLength:"72"`
 }
 
 type RegisterInput struct {
 	LoginInput
-	Timezone string `json:"timezone"`
+	Timezone string `json:"timezone" validate:"optional" default:"UTC" example:"Asia/Novosibirsk"`
 }
 
 func (input *LoginInput) validate() error {

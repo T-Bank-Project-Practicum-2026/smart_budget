@@ -33,11 +33,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/refresh", s.refresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
 	mux.HandleFunc("GET /api/v1/auth/me", s.me)
-	mux.HandleFunc("GET /api/v1/push/key", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"publicKey": s.PublicKey})
-	})
-	mux.HandleFunc("PUT /api/v1/push/subscription", s.subscription)
-	mux.HandleFunc("DELETE /api/v1/push/subscription", s.subscription)
+	mux.HandleFunc("GET /api/v1/push/key", s.publicKey)
+	mux.HandleFunc("PUT /api/v1/push/subscription", s.subscribe)
+	mux.HandleFunc("DELETE /api/v1/push/subscription", s.unsubscribe)
 	mux.HandleFunc("POST /api/v1/notifications/test", s.send)
 	mux.HandleFunc("GET /api/v1/notifications", s.list)
 

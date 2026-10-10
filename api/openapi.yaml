@@ -1,250 +1,509 @@
-openapi: 3.0.3
+# Сгенерировано командой. Не редактируйте вручную.
+components:
+  schemas:
+    auth.LoginInput:
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          type: string
+        password:
+          format: password
+          maxLength: 72
+          minLength: 8
+          type: string
+      required:
+      - email
+      - password
+      type: object
+    auth.RegisterInput:
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          type: string
+        password:
+          format: password
+          maxLength: 72
+          minLength: 8
+          type: string
+        timezone:
+          default: UTC
+          example: Asia/Novosibirsk
+          type: string
+      required:
+      - email
+      - password
+      type: object
+    auth.User:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        email:
+          format: email
+          type: string
+        id:
+          type: string
+        timezone:
+          type: string
+      required:
+      - createdAt
+      - email
+      - id
+      - timezone
+      type: object
+    push.Event:
+      properties:
+        body:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        title:
+          type: string
+        userId:
+          type: string
+      required:
+      - body
+      - createdAt
+      - id
+      - title
+      - userId
+      type: object
+    runtime.HealthResponse:
+      properties:
+        service:
+          example: smart_budget
+          type: string
+        status:
+          example: ok
+          type: string
+      required:
+      - service
+      - status
+      type: object
+    server.ErrorResponse:
+      properties:
+        error:
+          type: string
+      required:
+      - error
+      type: object
+    server.PublicKeyResponse:
+      properties:
+        publicKey:
+          type: string
+      required:
+      - publicKey
+      type: object
+    server.QueuedResponse:
+      properties:
+        id:
+          type: string
+        status:
+          enum:
+          - queued
+          type: string
+      required:
+      - id
+      - status
+      type: object
+    server.SubscriptionInput:
+      properties:
+        endpoint:
+          format: uri
+          maxLength: 4096
+          type: string
+        keys:
+          properties:
+            auth:
+              type: string
+            p256dh:
+              type: string
+          required:
+          - auth
+          - p256dh
+          type: object
+      required:
+      - endpoint
+      - keys
+      type: object
+    server.UnsubscribeInput:
+      properties:
+        endpoint:
+          format: uri
+          type: string
+      required:
+      - endpoint
+      type: object
+  securitySchemes:
+    accessCookie:
+      in: cookie
+      name: budget_access
+      type: apiKey
+    refreshCookie:
+      in: cookie
+      name: budget_refresh
+      type: apiKey
+externalDocs:
+  description: Спецификация OpenAPI 3.1
+  url: https://spec.openapis.org/oas/v3.1.0
 info:
-  title: Smart Budget API
+  description: 'Авторизация через HttpOnly-cookie. Для POST, PUT и DELETE нужны разрешённый
+    Origin и X-CSRF-Protection: 1.'
+  title: API «Умный бюджет»
   version: 1.0.0
-  description: >-
-    Авторизация через cookie. Для POST, PUT и DELETE нужны разрешённый Origin
-    и заголовок X-CSRF-Protection: 1.
-servers:
-  - url: /api/v1
-security:
-  - accessCookie: []
+openapi: 3.1.0
 paths:
-  /health:
+  /api/health:
     get:
-      servers:
-        - url: /api
-      security: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/runtime.HealthResponse'
+          description: Сервис работает
       summary: Проверка API
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status: {type: string, example: ok}
-                  service: {type: string, example: smart_budget}
-  /ready:
+      tags:
+      - Состояние сервиса
+  /api/ready:
     get:
-      servers:
-        - url: /api
-      security: []
+      responses:
+        "204":
+          description: Выполнено, без тела ответа
+        "503":
+          description: PostgreSQL недоступен
       summary: Готовность API
-      responses:
-        '204': {description: No Content}
-        '503': {description: PostgreSQL недоступен}
-  /auth/register:
+      tags:
+      - Состояние сервиса
+  /api/v1/auth/login:
     post:
-      summary: Регистрация
-      security: []
-      parameters: [{$ref: '#/components/parameters/CSRF'}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/Registration'}
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/User'}
-        default: {$ref: '#/components/responses/Error'}
-  /auth/login:
-    post:
-      summary: Вход
-      security: []
-      parameters: [{$ref: '#/components/parameters/CSRF'}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/Credentials'}
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/User'}
-        default: {$ref: '#/components/responses/Error'}
-  /auth/refresh:
-    post:
-      summary: Обновление сессии
-      security:
-        - refreshCookie: []
-      parameters: [{$ref: '#/components/parameters/CSRF'}]
-      responses:
-        '204': {description: No Content}
-        default: {$ref: '#/components/responses/Error'}
-  /auth/logout:
-    post:
-      summary: Выход
-      security:
-        - accessCookie: []
-        - refreshCookie: []
-        - {}
       parameters:
-        - {$ref: '#/components/parameters/CSRF'}
-        - {$ref: '#/components/parameters/AccountID'}
-      responses:
-        '204': {description: No Content}
-        default: {$ref: '#/components/responses/Error'}
-  /auth/me:
-    get:
-      summary: Текущий пользователь
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/User'}
-        default: {$ref: '#/components/responses/Error'}
-  /push/key:
-    get:
-      summary: Публичный VAPID-ключ
-      security: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [publicKey]
-                properties:
-                  publicKey: {type: string}
-  /push/subscription:
-    put:
-      summary: Подписка на push
-      parameters:
-        - {$ref: '#/components/parameters/CSRF'}
-        - {$ref: '#/components/parameters/AccountID'}
-      requestBody:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
         required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/Subscription'}
-      responses:
-        '204': {description: No Content}
-        default: {$ref: '#/components/responses/Error'}
-    delete:
-      summary: Отписка от push
-      parameters:
-        - {$ref: '#/components/parameters/CSRF'}
-        - {$ref: '#/components/parameters/AccountID'}
+        schema:
+          enum:
+          - "1"
+          type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [endpoint]
-              properties:
-                endpoint: {type: string, format: uri}
+              $ref: '#/components/schemas/auth.LoginInput'
+              description: Данные пользователя
+              summary: body
+        description: Данные пользователя
+        required: true
       responses:
-        '204': {description: No Content}
-        default: {$ref: '#/components/responses/Error'}
-  /notifications/test:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/auth.User'
+          description: Профиль пользователя
+          headers:
+            Set-Cookie:
+              description: Cookie budget_access и budget_refresh с флагом HttpOnly
+              schema:
+                type: string
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      summary: Вход
+      tags:
+      - Авторизация
+  /api/v1/auth/logout:
     post:
-      summary: Тестовое уведомление
+      description: Завершает сессию по любой из двух cookie и удаляет обе. Без cookie
+        тоже возвращает 204.
       parameters:
-        - {$ref: '#/components/parameters/CSRF'}
-        - {$ref: '#/components/parameters/AccountID'}
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema: {type: string, minLength: 16, maxLength: 100}
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
       responses:
-        '202':
-          description: Accepted
+        "204":
+          description: Выполнено, без тела ответа
+        default:
           content:
             application/json:
               schema:
-                type: object
-                required: [id, status]
-                properties:
-                  id: {type: string}
-                  status: {type: string, enum: [queued]}
-        default: {$ref: '#/components/responses/Error'}
-  /notifications:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      summary: Выход
+      tags:
+      - Авторизация
+  /api/v1/auth/me:
     get:
-      summary: Последние 20 уведомлений
-      parameters: [{$ref: '#/components/parameters/AccountID'}]
       responses:
-        '200':
-          description: Последние 20 записей, сначала новые
+        "200":
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/auth.User'
+          description: Профиль пользователя
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Текущий пользователь
+      tags:
+      - Авторизация
+  /api/v1/auth/refresh:
+    post:
+      description: Обновляет обе cookie по refresh-сессии.
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      responses:
+        "204":
+          description: Выполнено, без тела ответа
+          headers:
+            Set-Cookie:
+              description: Cookie budget_access и budget_refresh с флагом HttpOnly
+              schema:
+                type: string
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - refreshCookie: []
+      summary: Обновление сессии
+      tags:
+      - Авторизация
+  /api/v1/auth/register:
+    post:
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/auth.RegisterInput'
+              description: Данные пользователя
+              summary: body
+        description: Данные пользователя
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/auth.User'
+          description: Пользователь зарегистрирован
+          headers:
+            Set-Cookie:
+              description: Cookie budget_access и budget_refresh с флагом HttpOnly
+              schema:
+                type: string
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      summary: Регистрация
+      tags:
+      - Авторизация
+  /api/v1/notifications:
+    get:
+      description: Сначала новые.
+      parameters:
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/push.Event'
                 type: array
-                items: {$ref: '#/components/schemas/Notification'}
-        default: {$ref: '#/components/responses/Error'}
-components:
-  securitySchemes:
-    accessCookie: {type: apiKey, in: cookie, name: budget_access}
-    refreshCookie: {type: apiKey, in: cookie, name: budget_refresh}
-  parameters:
-    CSRF:
-      name: X-CSRF-Protection
-      in: header
-      required: true
-      schema: {type: string, enum: ['1']}
-    AccountID:
-      name: X-Account-ID
-      in: header
-      description: ID текущего пользователя. Если не совпадает с сессией — 409.
-      required: false
-      schema: {type: string}
-  responses:
-    Error:
-      description: Ошибка запроса
-      content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
-  schemas:
-    Error:
-      type: object
-      required: [error]
-      properties:
-        error: {type: string}
-    Credentials:
-      type: object
-      required: [email, password]
-      properties:
-        email: {type: string, format: email, maxLength: 254}
-        password: {type: string, format: password, minLength: 8, maxLength: 72, description: До 72 байт UTF-8}
-    Registration:
-      allOf:
-        - {$ref: '#/components/schemas/Credentials'}
-        - type: object
-          properties:
-            timezone: {type: string, default: UTC, example: Asia/Novosibirsk}
-    User:
-      type: object
-      required: [id, email, timezone, createdAt]
-      properties:
-        id: {type: string}
-        email: {type: string, format: email}
-        timezone: {type: string}
-        createdAt: {type: string, format: date-time}
-    Subscription:
-      type: object
-      required: [endpoint, keys]
-      properties:
-        endpoint: {type: string, format: uri, maxLength: 4096}
-        keys:
-          type: object
-          required: [p256dh, auth]
-          properties:
-            p256dh: {type: string}
-            auth: {type: string}
-    Notification:
-      type: object
-      required: [id, title, body, createdAt]
-      properties:
-        id: {type: string}
-        title: {type: string}
-        body: {type: string}
-        createdAt: {type: string, format: date-time}
+          description: Список уведомлений
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Последние 20 уведомлений
+      tags:
+      - Уведомления
+  /api/v1/notifications/test:
+    post:
+      description: Добавляет уведомление в очередь, не чаще раза в 10 секунд. Повторный
+        запрос с тем же Idempotency-Key возвращает тот же ID.
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          maxLength: 100
+          minLength: 16
+          type: string
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.QueuedResponse'
+          description: Уведомление в очереди
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Тестовое уведомление
+      tags:
+      - Уведомления
+  /api/v1/push/key:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.PublicKeyResponse'
+          description: Публичный ключ
+      summary: Публичный VAPID-ключ
+      tags:
+      - Push-уведомления
+  /api/v1/push/subscription:
+    delete:
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/server.UnsubscribeInput'
+              description: Push-подписка
+              summary: body
+        description: Push-подписка
+        required: true
+      responses:
+        "204":
+          description: Выполнено, без тела ответа
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Отписка от push
+      tags:
+      - Push-уведомления
+    put:
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/server.SubscriptionInput'
+              description: Push-подписка
+              summary: body
+        description: Push-подписка
+        required: true
+      responses:
+        "204":
+          description: Выполнено, без тела ответа
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Подписка на push
+      tags:
+      - Push-уведомления
+servers:
+- url: /

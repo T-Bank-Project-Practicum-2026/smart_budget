@@ -17,12 +17,18 @@ make up
 | `make lint` | Проверить Go, TypeScript и форматирование |
 | `make lint-fix` | Исправить форматирование |
 | `make test` | Go-тесты с Redpanda/PostgreSQL |
-| `make generate` | Пересобрать Go-методы из SQL через sqlc |
-| `make check-generated` | Проверить актуальность сгенерированного кода |
+| `make generate` | Пересобрать SQL-методы и OpenAPI |
+| `make swagger` | Сгенерировать `api/openapi.yaml` из Go-кода |
+| `make check-swagger` | Проверить актуальность OpenAPI |
+| `make check-generated` | Проверить актуальность SQL-методов и OpenAPI |
 | `make migrate` | Применить SQL-миграции |
 | `make migrate-status` | Показать состояние миграций |
 
 В GoLand открывайте корень проекта: `go.work` подключает модуль `backend/`. В Settings → Go → Go Modules должна быть включена `Enable Go modules integration`. В Go SDK выберите Go 1.27.1 или новее, как требует `backend/go.mod`.
+
+## Swagger
+
+После изменения API запустите `make swagger`. YAML генерируется через swaggo в Docker, вручную его править не нужно. `make generate` тоже обновляет Swagger, а CI проверяет его актуальность.
 
 ## PostgreSQL
 

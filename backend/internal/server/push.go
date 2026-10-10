@@ -15,6 +15,45 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// @Summary Подписка на push
+// @Tags Push-уведомления
+// @Accept json
+// @Produce json
+// @Security accessCookie
+// @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
+// @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
+// @Param body body SubscriptionInput true "Push-подписка"
+// @Success 204 "Выполнено, без тела ответа"
+// @Failure default {object} ErrorResponse "Ошибка запроса"
+// @Router /api/v1/push/subscription [put]
+func (s *Server) subscribe(w http.ResponseWriter, r *http.Request) {
+	s.subscription(w, r)
+}
+
+// @Summary Отписка от push
+// @Tags Push-уведомления
+// @Accept json
+// @Produce json
+// @Security accessCookie
+// @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
+// @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
+// @Param body body UnsubscribeInput true "Push-подписка"
+// @Success 204 "Выполнено, без тела ответа"
+// @Failure default {object} ErrorResponse "Ошибка запроса"
+// @Router /api/v1/push/subscription [delete]
+func (s *Server) unsubscribe(w http.ResponseWriter, r *http.Request) {
+	s.subscription(w, r)
+}
+
+// @Summary Публичный VAPID-ключ
+// @Tags Push-уведомления
+// @Produce json
+// @Success 200 {object} PublicKeyResponse "Публичный ключ"
+// @Router /api/v1/push/key [get]
+func (s *Server) publicKey(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, PublicKeyResponse{PublicKey: s.PublicKey})
+}
+
 func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 	identity, err := s.identity(r)
 	if err != nil {
@@ -67,6 +106,17 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Тестовое уведомление
+// @Description Добавляет уведомление в очередь, не чаще раза в 10 секунд. Повторный запрос с тем же Idempotency-Key возвращает тот же ID.
+// @Tags Уведомления
+// @Produce json
+// @Security accessCookie
+// @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
+// @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
+// @Param Idempotency-Key header string true "Ключ идемпотентности" minLength(16) maxLength(100)
+// @Success 202 {object} QueuedResponse "Уведомление в очереди"
+// @Failure default {object} ErrorResponse "Ошибка запроса"
+// @Router /api/v1/notifications/test [post]
 func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 	user, err := s.user(r)
 	if err != nil {
@@ -102,7 +152,7 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 
 	previous, err := queries.FindNotification(r.Context(), apidb.FindNotificationParams{UserID: user, RequestKey: key})
 	if err == nil {
-		writeJSON(w, 202, map[string]string{"id": previous, "status": "queued"})
+		writeJSON(w, 202, QueuedResponse{ID: previous, Status: "queued"})
 
 		return
 	}
@@ -151,9 +201,18 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, 202, map[string]string{"id": event.ID, "status": "queued"})
+	writeJSON(w, 202, QueuedResponse{ID: event.ID, Status: "queued"})
 }
 
+// @Summary Последние 20 уведомлений
+// @Description Сначала новые.
+// @Tags Уведомления
+// @Produce json
+// @Security accessCookie
+// @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
+// @Success 200 {array} push.Event "Список уведомлений"
+// @Failure default {object} ErrorResponse "Ошибка запроса"
+// @Router /api/v1/notifications [get]
 func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 	user, err := s.user(r)
 	if err != nil {
