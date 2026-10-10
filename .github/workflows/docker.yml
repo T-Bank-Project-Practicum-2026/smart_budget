@@ -1,9 +1,9 @@
 name: Docker CI
 on:
   push:
-    paths: ['compose.yaml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
   pull_request:
-    paths: ['compose.yaml', 'Makefile', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker.yml']
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check generated SQL queries
+      - name: Check generated SQL queries and OpenAPI
         run: make check-generated
 
       - name: Configure local environment

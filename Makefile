@@ -1,11 +1,15 @@
 .DEFAULT_GOAL := help
 COMPOSE ?= docker compose
 SQLC_IMAGE := sqlc/sqlc:1.31.1
+SWAGGER_IMAGE := smart-budget-swagger:local
+SWAGGER_DOCKER = docker run --rm --user "$$(id -u):$$(id -g)" -e GOCACHE=/tmp/go-build -e GOPATH=/tmp/go
 
-.PHONY: generate check-generated init help up down logs lint lint-fix test migrate migrate-status
+.PHONY: generate generate-sql swagger swagger-tool check-swagger check-generated init help up down logs lint lint-fix test migrate migrate-status
 help:
-	@echo "make generate  Generate Go queries from SQL"
-	@echo "make check-generated  Check generated queries are up to date"
+	@echo "make swagger   Обновить api/openapi.yaml из Go-кода"
+	@echo "make check-swagger  Проверить актуальность OpenAPI"
+	@echo "make generate  Generate SQL queries and OpenAPI documentation"
+	@echo "make check-generated  Check generated SQL queries and OpenAPI are up to date"
 	@echo "make init      Generate missing local secrets in .env"
 	@echo "make migrate   Apply SQL migrations"
 	@echo "make migrate-status  Show migration status"
@@ -49,8 +53,19 @@ migrate:
 migrate-status:
 	$(COMPOSE) run --build --rm migrate status
 
-generate:
+generate: generate-sql swagger
+
+generate-sql:
 	docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR)/backend:/src" -w /src $(SQLC_IMAGE) generate
 
-check-generated:
+check-generated: check-swagger
 	docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR)/backend:/src:ro" -w /src $(SQLC_IMAGE) diff
+
+swagger-tool:
+	docker build -f scripts/swagger.Dockerfile -t $(SWAGGER_IMAGE) scripts
+
+swagger: swagger-tool
+	$(SWAGGER_DOCKER) -v "$(CURDIR):/workspace" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh generate
+
+check-swagger: swagger-tool
+	$(SWAGGER_DOCKER) -v "$(CURDIR):/workspace:ro" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh check

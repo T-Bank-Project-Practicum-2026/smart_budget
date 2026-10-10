@@ -32,7 +32,8 @@ Go backend и frontend на React + TypeScript. На backend работают р
 
 Основные команды выполняй через Makefile из корня; нужен запущенный Docker. Выбирай проверки по изменению:
 
-- `make generate` — генерация sqlc в Docker; `make check-generated` — проверка актуальности, также запускается в CI.
+- `make generate` — генерация sqlc и OpenAPI в Docker; `make check-generated` — проверка актуальности, также запускается в CI.
+- `make swagger` — обновить OpenAPI из Go-аннотаций. Описания пиши на русском, `api/openapi.yaml` вручную не редактируй.
 - `make lint` — golangci-lint и frontend lint; `make lint-fix` — автоисправления.
 - `make test` — Go-тесты и проверки настоящих Redpanda и PostgreSQL.
 - `make up` — сборка и запуск API, frontend, worker, notifications, Redpanda и PostgreSQL. Приложение — `http://localhost:3000`, health — `/api/health`.
