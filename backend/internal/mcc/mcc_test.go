@@ -6,14 +6,14 @@ func TestDetectCategory(t *testing.T) {
 	tests := []struct {
 		name     string
 		mccCode  string
-		expected CategoryGroup
-	}{
+		expected CategoryGroup }{
 		{"Проверка супермаркета", "5411", GroupGroceries},
 		{"Проверка такси", "4121", GroupTaxi},
 		{"Проверка ЖКХ", "4900", GroupUtilities},
 		{"Проверка кода с пробелами", "5814", GroupRestaurants},
 		{"Проверка неизвестного кода", "0000", GroupUnknown},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := DetectCategory(tt.mccCode)

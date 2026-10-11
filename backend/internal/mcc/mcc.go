@@ -1,6 +1,7 @@
 package mcc
 
 import "strings"
+
 type CategoryGroup string
 
 const (
@@ -19,6 +20,7 @@ const (
 	GroupTransfers     CategoryGroup = "Переводы и наличные"
 	GroupUnknown       CategoryGroup = "Разное"
 )
+
 type Category struct {
 	Name  string
 	Group CategoryGroup
