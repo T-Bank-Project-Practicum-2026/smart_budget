@@ -1,0 +1,31 @@
+.container {
+  // стили бывшего .button
+  height: 48px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-gray-11);
+  background-color: transparent;
+  border: none;
+
+  // сброс дефолтных стилей <a>
+  text-decoration: none;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+
+  // стили бывшего .container
+  flex-direction: row;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition-duration: 0.3s;
+
+  &:hover {
+    color: var(--color-dark-1);
+    border-bottom-color: var(--color-dark-1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-dark-1);
+    outline-offset: 2px;
+  }
+}

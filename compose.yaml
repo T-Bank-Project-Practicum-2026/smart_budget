@@ -9,13 +9,13 @@ x-postgres-env: &postgres-env
 
 services:
   postgres:
-    image: postgres:17.6-alpine
+    image: ${POSTGRES_IMAGE:-postgres:18.6-alpine}
     restart: unless-stopped
     environment:
       POSTGRES_DB: smart_budget
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:${POSTGRES_VOLUME_TARGET:-/var/lib/postgresql}
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d smart_budget']
       interval: 5s
@@ -28,7 +28,11 @@ services:
       args:
         APP_PATH: ./cmd/migrate
     profiles: ['tools']
-    environment: *postgres-env
+    environment:
+      <<: *postgres-env
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?Run make init}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD:?Run make init}
+      NOTIFICATIONS_DB_PASSWORD: ${NOTIFICATIONS_DB_PASSWORD:?Run make init}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,37 +41,82 @@ services:
       disable: true
 
   kafka:
-    image: apache/kafka:4.1.1
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.3
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: 1
+    command:
+      - redpanda
+      - start
+      - --mode
+      - dev-container
+      - --smp
+      - '1'
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --kafka-addr
+      - 0.0.0.0:9092
+      - --advertise-kafka-addr
+      - kafka:9092
+      - --set
+      - redpanda.auto_create_topics_enabled=false
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ['CMD', 'rpk', 'cluster', 'info', '-X', 'brokers=127.0.0.1:9092']
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 10
+
+  kafka-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.3
+    profiles: ['tools']
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ['rpk']
+    command: ['topic', 'create', 'notifications.requested.v1', '--if-not-exists', '--partitions', '3', '--replicas', '1', '-X', 'brokers=kafka:9092']
+
+  worker:
+    build:
+      context: ./backend
+      args:
+        APP_PATH: ./cmd/worker
     restart: unless-stopped
     environment:
-      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
-    volumes:
-      - kafka_data:/var/lib/kafka/data
-    healthcheck:
-      test: ['CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka:9092', '--list']
-      interval: 10s
-      timeout: 10s
-      start_period: 30s
-      retries: 10
+      <<: *postgres-env
+      PGUSER: budget_worker
+      PGPASSWORD: ${WORKER_DB_PASSWORD:?Run make init}
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    read_only: true
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
 
   backend:
     build: ./backend
     restart: unless-stopped
     environment:
+      <<: *postgres-env
+      PGUSER: budget_api
+      PGPASSWORD: ${API_DB_PASSWORD:?Run make init}
       HTTP_ADDR: ':8080'
+      NOTIFICATIONS_URL: http://notifications:8080
+      NOTIFICATIONS_TOKEN: ${NOTIFICATIONS_TOKEN:?Run make init}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Run make init}
+      APP_ORIGINS: ${APP_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:?Run make init}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -81,9 +130,19 @@ services:
         APP_PATH: ./cmd/notifications
     restart: unless-stopped
     environment:
+      <<: *postgres-env
+      PGUSER: budget_notifications
+      PGPASSWORD: ${NOTIFICATIONS_DB_PASSWORD:?Run make init}
       HTTP_ADDR: ':8080'
+      NOTIFICATIONS_TOKEN: ${NOTIFICATIONS_TOKEN:?Run make init}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Run make init}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:?Run make init}
+      AUTH_API_URL: http://backend:8080
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
       KAFKA_BROKERS: kafka:9092
     depends_on:
+      postgres:
+        condition: service_healthy
       kafka:
         condition: service_healthy
     read_only: true
@@ -110,7 +169,7 @@ services:
   lint-go:
     build:
       context: ./backend
-      dockerfile: Dockerfile.lint
+      dockerfile: lint.Dockerfile
     profiles: ['tools']
     working_dir: /app
     volumes:
@@ -129,17 +188,17 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    image: golang:1.27.1-alpine
+    image: golang:1.27-alpine
     profiles: ['tools']
     working_dir: /app
     volumes:
       - ./backend:/app
       - go_modules:/go/pkg/mod
       - go_build:/root/.cache/go-build
-    command: ['go', 'test', './...']
+    command: ['go', 'test', '-count=1', './...']
 
   lint-frontend:
-    image: node:22-alpine
+    image: node:26-alpine
     profiles: ['tools']
     working_dir: /app
     volumes:
@@ -150,7 +209,7 @@ services:
 
 volumes:
   postgres_data:
-  kafka_data:
+  redpanda_data:
   go_modules:
   go_build:
   go_lint:

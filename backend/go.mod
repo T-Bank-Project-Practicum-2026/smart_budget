@@ -3,9 +3,14 @@ module smart_budget
 go 1.27.1
 
 require (
+	github.com/SherClockHolmes/webpush-go v1.4.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pressly/goose/v3 v3.28.0
 	github.com/twmb/franz-go v1.22.1
+	github.com/twmb/franz-go/pkg/kmsg v1.14.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/sync v0.22.0
 )
 
 require (
@@ -16,8 +21,6 @@ require (
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/sethvargo/go-retry v0.4.0 // indirect
-	github.com/twmb/franz-go/pkg/kmsg v1.14.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )

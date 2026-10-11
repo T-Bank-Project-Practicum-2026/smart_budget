@@ -1,0 +1,43 @@
+version: '2'
+sql:
+  - engine: postgresql
+    schema: &schema
+      - migrations/*.sql
+      - migrations/notifications
+    queries: queries/api
+    gen:
+      go:
+        package: apidb
+        out: internal/db/apidb
+        sql_package: pgx/v5
+        omit_unused_structs: true
+        overrides: &types
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              import: time
+              type: Time
+              pointer: true
+  - engine: postgresql
+    schema: *schema
+    queries: queries/outbox
+    gen:
+      go:
+        package: outboxdb
+        out: internal/db/outboxdb
+        sql_package: pgx/v5
+        omit_unused_structs: true
+        overrides: *types
+  - engine: postgresql
+    schema: *schema
+    queries: queries/notifications
+    gen:
+      go:
+        package: notificationsdb
+        out: internal/db/notificationsdb
+        sql_package: pgx/v5
+        omit_unused_structs: true
+        emit_pointers_for_null_types: true
+        overrides: *types

@@ -1,4 +1,4 @@
-FROM golang:1.27.1-alpine AS build
+FROM golang:1.27-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -8,7 +8,7 @@ COPY migrations ./migrations
 ARG APP_PATH=./cmd
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/server "$APP_PATH"
 
-FROM alpine:3.22 AS runtime
+FROM alpine:3.24 AS runtime
 RUN addgroup -S app && adduser -S -G app app
 WORKDIR /app
 COPY --from=build /out/server ./server
