@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -273,7 +274,11 @@ func TestConcurrentDeliveryAndCleanup(t *testing.T) {
 	}
 
 	cancel()
-	<-done
+
+	if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+
 	if calls.Load() != 4 {
 		t.Fatalf("calls=%d", calls.Load())
 	}

@@ -6,7 +6,8 @@ func TestDetectCategory(t *testing.T) {
 	tests := []struct {
 		name     string
 		mccCode  string
-		expected CategoryGroup }{
+		expected CategoryGroup
+	}{
 		{"Проверка супермаркета", "5411", GroupGroceries},
 		{"Проверка такси", "4121", GroupTaxi},
 		{"Проверка ЖКХ", "4900", GroupUtilities},
