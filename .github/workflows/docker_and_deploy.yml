@@ -1,0 +1,95 @@
+name: Docker CI and Deploy to NSTU server
+on:
+  push:
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
+  pull_request:
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check generated SQL queries and OpenAPI
+        run: make check-generated
+
+      - name: Configure local environment
+        run: make init
+
+      - name: Validate Compose
+        run: docker compose config --quiet
+
+      - name: Build and start
+        run: make up
+
+      - name: Apply migrations
+        run: make migrate && make migrate
+
+      - name: Test Go with Redpanda and PostgreSQL
+        run: make test
+
+      - name: Smoke test frontend and API proxy
+        run: |
+          curl --fail --retry 3 http://localhost:3000/ | grep -q 'Smart Budget'
+          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "smart_budget"'
+
+      - name: Smoke test notifications
+        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "notifications"'
+
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color
+
+      - name: Stop
+        if: always()
+        run: docker compose down --remove-orphans
+
+  deploy:
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync files via rsync
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='*.md' \
+            --exclude='.env*' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }}" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.SERVER_PATH }}"
+            make down
+            make up
+            curl --fail --retry 10 --retry-delay 6 http://127.0.0.1:3000/api/health
