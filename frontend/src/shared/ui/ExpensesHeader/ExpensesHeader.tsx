@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./ExpensesHeader.module.scss";
 import { formatCurrency } from "../../lib/format-currency";
-import CategoryBadge from "../CategoryBadge";
+import { CategoryBadge } from "../../../entities/category";
 import image from "./chevron-down.svg";
 
 export default function ExpensesHeader() {

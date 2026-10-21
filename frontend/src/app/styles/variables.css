@@ -4,7 +4,7 @@
 
   --color-dark-1: #313132;
   --color-dark-2: #2c2c2c;
-
+  --color-dark-3: "#333333";
   --color-yellow: #ffdd2d;
 
   --color-gray-1: #f6f7f8;
@@ -27,4 +27,24 @@
   --input-height: 40px;
 
   --transition-duration: 0.2s;
+
+  /* SKELETON */
+
+  --skeleton-base: #e0e0e0;
+  --skeleton-highlight: #f0f0f0;
+  --skeleton-overlay: #ffffff;
+  --skeleton-overlay-transparent: rgba(255, 255, 255, 0);
+
+  --skeleton-radius: 20px;
+  --skeleton-bg-size: 200% 100%;
+
+  --skeleton-duration: 1.5s;
+  --skeleton-easing: ease-in-out;
+  --skeleton-from-position: 200% 0;
+  --skeleton-to-position: -200% 0;
+
+  /* Опционально — пресеты радиусов, если скелетоны разные */
+  --skeleton-radius-sm: 4px;
+  --skeleton-radius-md: 8px;
+  --skeleton-radius-pill: 999px;
 }

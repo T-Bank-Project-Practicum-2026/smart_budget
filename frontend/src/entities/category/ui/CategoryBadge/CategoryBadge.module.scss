@@ -1,0 +1,70 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  border-radius: 20px;
+  width: fit-content;
+  height: fit-content;
+  padding: 2px;
+  box-sizing: border-box;
+  height: 30px;
+}
+
+.icon_container {
+  width: 1lh;
+  height: 1lh;
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100%;
+
+  & img {
+    width: 0.6lh;
+    height: 0.6lh;
+    object-fit: contain;
+  }
+}
+
+.title {
+  font-weight: 300;
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.value {
+  padding-right: 4px;
+  font-weight: 400;
+  padding-right: 8px;
+}
+
+// Skeleton
+
+.skeleton_container {
+  width: 150px;
+  height: 30px;
+  border-radius: 20px;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(
+    90deg,
+    var(--skeleton-base) 0%,
+    var(--skeleton-highlight) 50%,
+    var(--skeleton-base) 100%
+  );
+  background-size: var(--skeleton-bg-size);
+  animation: skeleton-shimmer var(--skeleton-duration) var(--skeleton-easing)
+    infinite;
+  overflow: hidden;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

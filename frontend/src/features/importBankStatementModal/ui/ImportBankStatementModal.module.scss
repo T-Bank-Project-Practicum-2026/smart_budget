@@ -1,0 +1,54 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Прячем настоящий input — но не display:none, иначе label перестанет фокусировать */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border: 2px dashed var(--color-gray-3, #ccc);
+  border-radius: var(--border-radius, 8px);
+  background-color: var(--color-gray-1, #fafafa);
+  color: var(--color-dark-3, #333);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-duration, 0.2s),
+    background-color var(--transition-duration, 0.2s);
+  word-break: break-all;
+
+  &:hover {
+    border-color: var(--color-dark-3, #333);
+    background-color: var(--color-gray-2, #f0f0f0);
+  }
+}
+
+/* Когда input в фокусе (Tab) — подсветить dropzone */
+.fileInput:focus-visible + .dropzone {
+  outline: 2px dashed var(--color-black);
+  outline-offset: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}

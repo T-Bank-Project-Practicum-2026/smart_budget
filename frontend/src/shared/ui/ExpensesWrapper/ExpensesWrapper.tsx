@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./ExpensesWrapper.module.scss";
 import ExpensesHeader from "../ExpensesHeader";
-import ExpensesBody from "../ExpensesBody";
+import { ExpensesBody } from "../ExpensesBody";
 
 export default function ExpensesWrapper() {
   return (

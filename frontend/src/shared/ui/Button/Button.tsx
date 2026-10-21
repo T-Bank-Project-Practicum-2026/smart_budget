@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./Button.module.scss";
 
 interface ButtonProps {
+  image?: string;
   children: React.ReactNode;
   isDisabled?: boolean;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
@@ -9,6 +10,7 @@ interface ButtonProps {
 }
 
 export default function Button({
+  image,
   children,
   isDisabled = false,
   onClick,
@@ -21,7 +23,10 @@ export default function Button({
       disabled={isDisabled}
       onClick={onClick}
     >
-      {children}
+      <div className={styles.content}>
+        {image && <img src={image} />}
+        {children}
+      </div>
     </button>
   );
 }

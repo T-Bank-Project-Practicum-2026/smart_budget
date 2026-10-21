@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./ExpensesBody.module.scss";
 import { formatCurrency } from "../../lib/format-currency";
-import CategoryBadge from "../CategoryBadge";
+import { CategoryBadge } from "../../../entities/category";
 
 export default function ExpensesBody() {
   return (

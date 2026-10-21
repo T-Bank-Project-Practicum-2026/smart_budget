@@ -1,5 +1,4 @@
 .container {
-  // стили бывшего .button
   height: 48px;
   display: inline-flex;
   justify-content: center;
@@ -8,12 +7,10 @@
   background-color: transparent;
   border: none;
 
-  // сброс дефолтных стилей <a>
   text-decoration: none;
   font: inherit;
   -webkit-tap-highlight-color: transparent;
 
-  // стили бывшего .container
   flex-direction: row;
   border-bottom: 2px solid transparent;
   cursor: pointer;
