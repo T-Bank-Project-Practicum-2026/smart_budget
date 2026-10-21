@@ -1,1 +1,1 @@
-export { default } from "./ExpensesBody";
+export { default as ExpensesBody } from "./ExpensesBody";

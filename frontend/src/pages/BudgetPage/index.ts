@@ -1,1 +1,1 @@
-export { default } from "./BudgetPage";
+export { BudgetPage } from "./ui/BudgetPage";
