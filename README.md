@@ -62,4 +62,4 @@ make up
 
 ## Документы
 
-[ТЗ](docs/requirements.md) · [Архитектура](docs/architecture.md) · [API](api/openapi.yaml)
+[ТЗ](docs/requirements.md) · [Архитектура](docs/architecture.md) · [Целевой backend (UML)](docs/architecture.md#целевой-backend-uml-диаграмма-компонентов) · [API](api/openapi.yaml)

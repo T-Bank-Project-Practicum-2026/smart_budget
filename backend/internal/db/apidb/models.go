@@ -3,3 +3,33 @@
 //   sqlc v1.31.1
 
 package apidb
+
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type AppBankConnection struct {
+	ID         string
+	UserID     string
+	Provider   string
+	ExternalID string
+	CreatedAt  time.Time
+}
+
+type AppTransaction struct {
+	ID               string
+	UserID           string
+	BankConnectionID string
+	ExternalID       string
+	Month            pgtype.Date
+	OccurredAt       time.Time
+	Kind             string
+	AmountKopecks    int64
+	Currency         string
+	Merchant         string
+	Mcc              pgtype.Text
+	Description      string
+	CreatedAt        time.Time
+}
