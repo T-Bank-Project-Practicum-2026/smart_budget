@@ -16,7 +16,7 @@ Go backend и frontend на React + TypeScript. На backend работают р
 - Архитектура: один Go-модуль, отдельные контейнеры API, worker и notifications. Worker публикует outbox в Redpanda по Kafka-протоколу; notifications потребляет события и отправляет push.
 - SQL сервисов — `backend/queries/`; методы генерируются sqlc в `backend/internal/db/`. После изменения SQL или миграций запускай `make generate`; сгенерированные файлы не редактируй вручную. Административный DDL мигратора и проверочные запросы тестов остаются вне sqlc.
 - Frontend — `frontend/src/`, обычный CSS и `fetch`. Пакеты, интерфейсы и зависимости добавляй под текущую задачу.
-- При переносе файлов учитывай Docker, Makefile, CI и README. Backend доступен через nginx `/api/`, без отдельного порта на хосте.
+- При переносе файлов учитывай Docker, Makefile, CI и README. Backend доступен через nginx `/api/`, Swagger UI — по `/swagger/`, без отдельного порта на хосте.
 
 ## Ограничения
 

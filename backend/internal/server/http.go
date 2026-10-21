@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"smart_budget/internal/auth"
+	"smart_budget/internal/importer"
 	app "smart_budget/internal/runtime"
+	"smart_budget/internal/tbankcsv"
 )
 
 var errInvalidRequest = errors.New("invalid_request")
@@ -64,6 +66,24 @@ func respondError(w http.ResponseWriter, err error) {
 	case errors.Is(err, auth.ErrTooManyAttempts):
 		w.Header().Set("Retry-After", "900")
 		writeError(w, 429, "too_many_attempts")
+
+	case errors.Is(err, importer.ErrFileTooLarge):
+		writeError(w, 413, "file_too_large")
+
+	case errors.Is(err, importer.ErrInvalidIdempotencyKey):
+		writeError(w, 400, "invalid_idempotency_key")
+
+	case errors.Is(err, importer.ErrImportNotFound):
+		writeError(w, 404, "import_not_found")
+
+	case errors.Is(err, importer.ErrImportInProgress):
+		writeError(w, 409, "import_in_progress")
+
+	case errors.Is(err, tbankcsv.ErrEmptyFile):
+		writeError(w, 400, "empty_file")
+
+	case errors.Is(err, tbankcsv.ErrInvalidHeader), errors.Is(err, tbankcsv.ErrInvalidCSV):
+		writeError(w, 400, "invalid_tbank_csv")
 
 	default:
 		app.LogError("api.request", err)
