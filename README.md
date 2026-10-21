@@ -10,6 +10,8 @@ make up
 
 Приложение: http://localhost:3000. Порт frontend задаётся через `FRONTEND_PORT` в `.env`; при его смене обновите `APP_ORIGINS`. Backend доступен внутри Docker-сети, запросы `/api/` проходят через nginx.
 
+Swagger UI: http://localhost:3000/swagger/ — документация и OpenAPI доступны через тот же nginx.
+
 | Команда | Действие |
 | --- | --- |
 | `make down` | Остановить контейнеры, сохранить данные |

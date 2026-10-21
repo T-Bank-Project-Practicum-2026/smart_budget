@@ -11,7 +11,7 @@ trap 'rm -rf "$output"' EXIT HUP INT TERM
 
 swag init \
   --v3.1 --generalInfo doc.go \
-  --dir internal/server,internal/auth,internal/push,internal/runtime \
+  --dir internal/server,internal/auth,internal/importer,internal/push,internal/runtime,internal/tbankcsv \
   --parseInternal --requiredByDefault --outputTypes yaml \
   --output "$output"
 { echo '# Сгенерировано командой. Не редактируйте вручную.'; cat "$output/swagger.yaml"; } > "$output/openapi.yaml"
@@ -21,6 +21,11 @@ if [ "$mode" = check ]; then
     echo 'OpenAPI устарел. Запустите make swagger.' >&2
     exit 1
   }
+  diff -u internal/swagger/openapi.yaml "$output/openapi.yaml" || {
+    echo 'Встроенный OpenAPI устарел. Запустите make swagger.' >&2
+    exit 1
+  }
 else
   cp "$output/openapi.yaml" ../api/openapi.yaml
+  cp "$output/openapi.yaml" internal/swagger/openapi.yaml
 fi

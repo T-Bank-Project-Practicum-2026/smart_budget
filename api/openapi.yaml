@@ -53,6 +53,97 @@ components:
       - id
       - timezone
       type: object
+    importer.Import:
+      properties:
+        conflictRows:
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        duplicateRows:
+          type: integer
+        errors:
+          items:
+            $ref: '#/components/schemas/tbankcsv.RowError'
+          type: array
+          uniqueItems: false
+        errorsTruncated:
+          type: boolean
+        failedRows:
+          type: integer
+        fileHash:
+          type: string
+        fileName:
+          type: string
+        finishedAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        importedRows:
+          type: integer
+        skippedRows:
+          type: integer
+        status:
+          enum:
+          - processing
+          - completed
+          - failed
+          type: string
+        totalRows:
+          type: integer
+      required:
+      - conflictRows
+      - createdAt
+      - duplicateRows
+      - errors
+      - errorsTruncated
+      - failedRows
+      - fileHash
+      - fileName
+      - id
+      - importedRows
+      - skippedRows
+      - status
+      - totalRows
+      type: object
+    importer.Operation:
+      properties:
+        amount:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        currency:
+          type: string
+        externalId:
+          type: string
+        id:
+          type: string
+        importId:
+          type: string
+        mcc:
+          type: string
+        merchant:
+          type: string
+        month:
+          example: 2025-08
+          type: string
+        occurredAt:
+          format: date-time
+          type: string
+      required:
+      - amount
+      - createdAt
+      - currency
+      - externalId
+      - id
+      - importId
+      - mcc
+      - merchant
+      - month
+      - occurredAt
+      type: object
     push.Event:
       properties:
         body:
@@ -138,6 +229,16 @@ components:
           type: string
       required:
       - endpoint
+      type: object
+    tbankcsv.RowError:
+      properties:
+        line:
+          type: integer
+        message:
+          type: string
+      required:
+      - line
+      - message
       type: object
   securitySchemes:
     accessCookie:
@@ -343,6 +444,154 @@ paths:
       summary: Регистрация
       tags:
       - Авторизация
+  /api/v1/imports:
+    get:
+      description: Возвращает последние 50 импортов пользователя, сначала новые.
+      parameters:
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/importer.Import'
+                type: array
+          description: Список импортов
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: История импортов
+      tags:
+      - Импорт
+  /api/v1/imports/{id}:
+    get:
+      parameters:
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      - description: ID импорта
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/importer.Import'
+          description: Импорт
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Импорт не найден
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Импорт по ID
+      tags:
+      - Импорт
+  /api/v1/imports/tbank:
+    post:
+      description: Принимает CSV-выписку T-Bank. Повторные операции пропускаются,
+        конфликтующие строки сохраняются в ошибках импорта.
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        schema:
+          maxLength: 100
+          minLength: 16
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  description: CSV-выписка T-Bank, не больше 10 МиБ
+                  format: binary
+                  type: string
+              required:
+              - file
+              type: object
+        description: CSV-выписка T-Bank, не больше 10 МиБ
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/importer.Import'
+          description: Повторный запрос вернул существующий импорт
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/importer.Import'
+          description: Импорт создан
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Некорректный файл или ключ идемпотентности
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Импорт с этим ключом ещё выполняется
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Файл больше 10 МиБ
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Импорт операций T-Bank
+      tags:
+      - Импорт
   /api/v1/notifications:
     get:
       description: Сначала новые.
@@ -416,6 +665,36 @@ paths:
       summary: Тестовое уведомление
       tags:
       - Уведомления
+  /api/v1/operations:
+    get:
+      description: Возвращает последние 100 операций пользователя, сначала новые.
+        Сумма передаётся в копейках строкой.
+      parameters:
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/importer.Operation'
+                type: array
+          description: Список операций
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Операции
+      tags:
+      - Операции
   /api/v1/push/key:
     get:
       responses:

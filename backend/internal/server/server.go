@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"smart_budget/internal/auth"
+	"smart_budget/internal/importer"
+	"smart_budget/internal/swagger"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +18,7 @@ import (
 
 type Server struct {
 	Auth                               *auth.Service
+	Imports                            *importer.Service
 	SecureCookies                      bool
 	DB                                 *pgxpool.Pool
 	NotificationsURL, Token, PublicKey string
@@ -27,12 +30,20 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", app.Health("smart_budget"))
 	mux.HandleFunc("GET /api/ready", app.Ready(s.DB.Ping))
+	mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+	})
+	mux.Handle("GET /swagger/", swagger.Handler())
 	mux.HandleFunc("GET /internal/sessions/{id}", s.sessionStatus)
 	mux.HandleFunc("POST /api/v1/auth/register", s.register)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", s.refresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.logout)
 	mux.HandleFunc("GET /api/v1/auth/me", s.me)
+	mux.HandleFunc("POST /api/v1/imports/tbank", s.createTBankImport)
+	mux.HandleFunc("GET /api/v1/imports", s.listImports)
+	mux.HandleFunc("GET /api/v1/imports/{id}", s.getImport)
+	mux.HandleFunc("GET /api/v1/operations", s.listOperations)
 	mux.HandleFunc("GET /api/v1/push/key", s.publicKey)
 	mux.HandleFunc("PUT /api/v1/push/subscription", s.subscribe)
 	mux.HandleFunc("DELETE /api/v1/push/subscription", s.unsubscribe)
@@ -97,6 +108,8 @@ func New(db *pgxpool.Pool) (*Server, error) {
 		return nil, err
 	}
 
+	imports := importer.New(db)
+
 	secure := false
 	if value := os.Getenv("AUTH_COOKIE_SECURE"); value != "" {
 		secure, err = strconv.ParseBool(value)
@@ -111,5 +124,5 @@ func New(db *pgxpool.Pool) (*Server, error) {
 		}
 	}
 
-	return &Server{Auth: service, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: strings.Split(origins, ","), Client: &http.Client{Timeout: 10 * time.Second}}, nil
+	return &Server{Auth: service, Imports: imports, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: strings.Split(origins, ","), Client: &http.Client{Timeout: 10 * time.Second}}, nil
 }

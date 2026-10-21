@@ -3,3 +3,28 @@
 //   sqlc v1.31.1
 
 package apidb
+
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type AppImport struct {
+	ID              string
+	UserID          string
+	IdempotencyKey  pgtype.Text
+	FileName        string
+	FileHash        string
+	Status          string
+	TotalRows       int32
+	ImportedRows    int32
+	SkippedRows     int32
+	DuplicateRows   int32
+	ConflictRows    int32
+	FailedRows      int32
+	Errors          []byte
+	ErrorsTruncated bool
+	CreatedAt       time.Time
+	FinishedAt      *time.Time
+}
