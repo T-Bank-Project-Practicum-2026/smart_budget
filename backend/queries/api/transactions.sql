@@ -10,8 +10,8 @@ SELECT * FROM app.bank_connections WHERE user_id=$1 AND id=$2;
 SELECT * FROM app.bank_connections WHERE user_id=$1 ORDER BY created_at, id;
 
 -- name: CreateTransaction :one
--- Caller must lock the ledger period and write audit/outbox in the same transaction.
--- Duplicate or mismatched month returns no rows; importer must read and compare the existing operation.
+-- Блокировка месяца, аудит и outbox — в одной транзакции.
+-- Дубль или неверный месяц: строк нет; при дубле импорт сверяет данные.
 INSERT INTO app.transactions(id, user_id, bank_connection_id, external_id, month,
  occurred_at, kind, amount_kopecks, currency, merchant, mcc, description)
 SELECT sqlc.arg(id), p.user_id, sqlc.arg(bank_connection_id), sqlc.arg(external_id), p.month,

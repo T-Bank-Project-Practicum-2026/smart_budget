@@ -71,8 +71,8 @@ type CreateTransactionParams struct {
 	Month            pgtype.Date
 }
 
-// Caller must lock the ledger period and write audit/outbox in the same transaction.
-// Duplicate or mismatched month returns no rows; importer must read and compare the existing operation.
+// Блокировка месяца, аудит и outbox — в одной транзакции.
+// Дубль или неверный месяц: строк нет; при дубле импорт сверяет данные.
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (AppTransaction, error) {
 	row := q.db.QueryRow(ctx, createTransaction,
 		arg.ID,
