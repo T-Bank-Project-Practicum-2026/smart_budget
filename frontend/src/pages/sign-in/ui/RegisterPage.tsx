@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Container from "../../../shared/ui/Container";
-import LoginForm from "../../../features/auth/login";
 import styles from "./LoginPage.module.scss";
 import Field from "../../../shared/ui/Field";
 import Button from "../../../shared/ui/Button";
