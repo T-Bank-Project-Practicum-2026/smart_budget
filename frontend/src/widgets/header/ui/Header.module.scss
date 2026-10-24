@@ -1,13 +1,43 @@
-.container {
+.background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  background-color: var(--color-gray-12);
+  z-index: 10;
+}
+
+.container {
+  max-width: 1024px;
+  padding: 0px 12px;
+  margin: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.buttons {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background-color: var(--color-gray-12);
-  z-index: 10;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+.profile {
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+.menu {
+  height: 1lh;
+  @media (min-width: 1025px) {
+    display: none;
+  }
 }
