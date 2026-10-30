@@ -1,22 +1,86 @@
 const BASE_URL = "/api";
 
-export async function apiRequest<T>(
+export type ApiResult<T = any> =
+  | {
+      success: true;
+      status: number;
+      response: Response;
+      data: string;
+      json: T;
+    }
+  | {
+      success: false;
+      status: number;
+      response: Response | null;
+      error: string;
+      json: any | null;
+    };
+
+export type Method = "POST" | "GET";
+
+async function apiRequest<T = any>(
+  method: Method,
   endpoint: string,
   options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
+): Promise<ApiResult<T>> {
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      ...options,
+      credentials: "include",
+      headers: {
+        ...options.headers,
+        "X-CSRF-Protection": "1",
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.statusText}`);
+    const text = await response.text();
+
+    let parsedJson: any = null;
+    try {
+      if (text) parsedJson = JSON.parse(text);
+    } catch {
+      parsedJson = null;
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        status: response.status,
+        response,
+        error: text || `Ошибка со статусом ${response.status}`,
+        json: parsedJson,
+      };
+    }
+
+    return {
+      success: true,
+      status: response.status,
+      data: text,
+      response,
+      json: parsedJson as T,
+    };
+  } catch (networkError: any) {
+    return {
+      success: false,
+      status: 0,
+      response: null,
+      error: networkError?.message || "Сетевая ошибка",
+      json: null,
+    };
   }
+}
 
-  if (response.status === 204) return undefined as T;
+export async function POST<T = any>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<ApiResult<T>> {
+  return apiRequest<T>("POST", endpoint, options);
+}
 
-  return response.json() as Promise<T>;
+export async function GET<T = any>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<ApiResult<T>> {
+  return apiRequest<T>("GET", endpoint, options);
 }

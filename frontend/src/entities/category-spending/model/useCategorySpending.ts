@@ -14,7 +14,7 @@ export function useCategorySpendings() {
 
     getCategorySpendings()
       .then((data) => {
-        if (!cancelled) setCategorySpendings(data);
+        if (!cancelled) setCategorySpendings(data.json);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);

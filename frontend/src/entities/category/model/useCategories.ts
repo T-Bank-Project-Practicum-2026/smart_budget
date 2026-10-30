@@ -12,7 +12,7 @@ export function useCategories() {
 
     getCategories()
       .then((data) => {
-        if (!cancelled) setCategories(data);
+        if (!cancelled) setCategories(data.json);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);

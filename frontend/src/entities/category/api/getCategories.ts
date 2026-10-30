@@ -1,6 +1,7 @@
-import { apiRequest } from "../../../shared/api";
+import { GET } from "../../../shared/api";
+import { ApiResult } from "../../../shared/api/client";
 import type { Category } from "../model/types";
 
-export function getCategories(): Promise<Category[]> {
-  return apiRequest<Category[]>("/categories");
+export function getCategories(): Promise<ApiResult<Category[]>> {
+  return GET<Category[]>("/categories");
 }

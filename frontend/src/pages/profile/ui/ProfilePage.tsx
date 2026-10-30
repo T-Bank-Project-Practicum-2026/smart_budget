@@ -1,7 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styles from "./ProfilePage.module.scss";
+import useMe from "../../../features/auth/api/useMe";
+import { me } from "../../../shared/api/endpoints/me";
 
 export function ProfilePage() {
+  const { me, isLoading, error } = useMe();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const result = await me();
+        if (result.success) {
+          console.log("Пользователь:", result.json);
+        } else {
+          console.error("Что то походу пошло не так :<(   :", result.error);
+        }
+      } catch (error) {
+        console.error("Ошибка при запросе:", error);
+      }
+    };
+
+    fetchUser();
+
+    return () => {};
+  }, []);
+
   return (
     <div className={styles.page}>
       <section className={styles.section}>
@@ -25,8 +48,8 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* TODO: Кнопки (Выйти / История импортов выписок?) */}
-        {/* TODO: Логи событий вынести сюда? */}
+        {/* TODO: Кнопки (Выйти / История импортов выписок) */}
+        {/* TODO: Логи событий вынести сюда */}
       </section>
     </div>
   );

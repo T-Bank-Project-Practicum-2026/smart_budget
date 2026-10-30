@@ -3,9 +3,10 @@ import styles from "./Button.module.scss";
 
 interface ButtonProps {
   image?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   isDisabled?: boolean;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onSubmit?: React.SubmitEventHandler;
   type?: "button" | "submit" | "reset";
 }
 
@@ -14,6 +15,7 @@ export default function Button({
   children,
   isDisabled = false,
   onClick,
+  onSubmit,
   type = "button",
 }: ButtonProps) {
   return (
@@ -22,10 +24,11 @@ export default function Button({
       type={type}
       disabled={isDisabled}
       onClick={onClick}
+      onSubmit={onSubmit}
     >
       <div className={styles.content}>
         {image && <img src={image} />}
-        {children}
+        {children ? children : ""}
       </div>
     </button>
   );
