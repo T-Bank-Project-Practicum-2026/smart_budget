@@ -1,29 +1,34 @@
-import { useState } from "react";
-import { ApiResult } from "../../../shared/api/client";
+import { useEffect, useState } from "react";
 import { me, MeResponseDto } from "../../../shared/api/endpoints/me";
 
+export type UseMe = {
+    data: MeResponseDto | null;
+    isLoading: boolean;
+    error: string | null;
+};
+
 export default function useMe() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+    const [data, setData] = useState<MeResponseDto | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
-  const handleMe = async (): Promise<ApiResult<MeResponseDto>> => {
-    setIsLoading(true);
-    setError(null);
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            setError(null);
 
-    const result = await me();
+            const result = await me();
 
-    setIsLoading(false);
+            if (result.success) {
+                setData(result.json);
+            } else {
+                setError(result.error);
+            }
+            setIsLoading(false);
+        };
 
-    if (!result.success) {
-      setError(result.error || "Произошла ошибка при получении информации");
-    }
+        fetchData();
+    }, []);
 
-    return result;
-  };
-
-  return {
-    me: handleMe,
-    isLoading,
-    error,
-  };
+    return { data, isLoading, error } as UseMe;
 }

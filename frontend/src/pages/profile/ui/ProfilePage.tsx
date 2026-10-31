@@ -1,56 +1,51 @@
-import React, { useEffect } from "react";
+import React from "react";
 import styles from "./ProfilePage.module.scss";
 import useMe from "../../../features/auth/api/useMe";
-import { me } from "../../../shared/api/endpoints/me";
+import UserIcon from "../../../shared/ui/logo/user-round.svg";
 
 export function ProfilePage() {
-  const { me, isLoading, error } = useMe();
+    const { data, isLoading, error } = useMe();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const result = await me();
-        if (result.success) {
-          console.log("Пользователь:", result.json);
-        } else {
-          console.error("Что то походу пошло не так :<(   :", result.error);
-        }
-      } catch (error) {
-        console.error("Ошибка при запросе:", error);
-      }
-    };
+    return (
+        <div className={styles.page}>
+            <section className={styles.section}>
+                <h1>Профиль</h1>
+            </section>
 
-    fetchUser();
+            {isLoading && <div className={styles.skeleton_container} />}
+            {data && (
+                <section>
+                    <div className={styles.container}>
+                        <div className={styles.avatar_container}>
+                            <img
+                                className={styles.avatar}
+                                src={UserIcon}
+                                alt=""
+                            />
+                        </div>
+                        <div className={styles.info_container}>
+                            <div className={styles.row}>
+                                <span>Почта</span>
+                                <span>{data.email}</span>
+                            </div>
+                            <div className={styles.row}>
+                                <span>ID</span>
+                                <span>{data.id}</span>
+                            </div>
+                            <div className={styles.row}>
+                                <span>Дата регистрации</span>
+                                <span>{data.createdAt}</span>
+                            </div>
+                            <div className={styles.row}>
+                                <span>Временная зона</span>
+                                <span>{data.timezone}</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
 
-    return () => {};
-  }, []);
-
-  return (
-    <div className={styles.page}>
-      <section className={styles.section}>
-        <h1>Профиль</h1>
-      </section>
-      <section>
-        <div className={styles.container}>
-          <img
-            className={styles.avatar}
-            src="https://cdn-icons-png.magnific.com/256/25/25469.png?semt=ais_white_label"
-          />
-          <div className={styles.info_container}>
-            <div className={styles.row}>
-              <span>Почта</span>
-              <span>example@mail.ru</span>
-            </div>
-            <div className={styles.row}>
-              <span>Пароль</span>
-              <span>Изменить</span>
-            </div>
-          </div>
+            {error && <span>Ошибка при загрузке страницы: {error}</span>}
         </div>
-
-        {/* TODO: Кнопки (Выйти / История импортов выписок) */}
-        {/* TODO: Логи событий вынести сюда */}
-      </section>
-    </div>
-  );
+    );
 }
