@@ -6,25 +6,23 @@ import Button from "../../../shared/ui/Button";
 import LoginIcon from "../../../shared/ui/logo/key-round.svg";
 import LockIcon from "../../../shared/ui/logo/lock-keyhole.svg";
 import MailIcon from "../../../shared/ui/logo/mail.svg";
-import { Link } from "react-router-dom";
-import useLogin from "../../../features/auth/api/useLogin";
+import { Link, useNavigate } from "react-router-dom";
+import { useLogin } from "../../../features/auth/api/useLogin";
 
 export function AuthPage() {
-  const { login, isLoading, error } = useLogin();
+  const { mutate, isPending, error } = useLogin();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
 
-    const result = await login({ email, password });
-
-    if (result.success) {
-      console.log("Вошел:", result.json);
-    } else {
-      console.error("Не вошел:", result.error);
-    }
+    mutate(
+      { email, password },
+      { onSuccess: () => navigate("/profile", { replace: true }) },
+    );
   };
 
   return (
@@ -32,7 +30,7 @@ export function AuthPage() {
       <h1>Войти в аккаунт</h1>
 
       <form className={styles.container} onSubmit={handleSubmit}>
-        {isLoading && (
+        {isPending && (
           <div className={styles.loading}>
             {/* Обновить на крутящуюся штучку */}
             <span>Происходит вход...</span>
@@ -63,11 +61,11 @@ export function AuthPage() {
           <div className={styles.error}>
             <span>Произошла ошибка</span>
             <br />
-            <span>{error}</span>
+            <span>{error.message}</span>
           </div>
         )}
 
-        <Button image={LoginIcon} type="submit" isDisabled={isLoading}>
+        <Button image={LoginIcon} type="submit" isDisabled={isPending}>
           Войти
         </Button>
 

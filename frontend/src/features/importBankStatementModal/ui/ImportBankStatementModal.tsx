@@ -6,6 +6,7 @@ import SaveIcon from "../../../shared/ui/logo/save.svg";
 import HistoryIcon from "../../../shared/ui/logo/history.svg";
 import TrashIcon from "../../../shared/ui/logo/trash.svg";
 import { useNavigate } from "react-router-dom";
+import { useTbankImport } from "../../imports/api/useTbankImport";
 
 interface ImportBankStatementModalProps {
   isOpen: boolean;
@@ -27,11 +28,19 @@ export default function ImportBankStatementModal({
   onClose,
 }: ImportBankStatementModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const { mutate, isPending, error } = useTbankImport();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onClose();
+    if (file === null) return;
+
+    mutate(file, {
+      onSuccess: () => {
+        setFile(null);
+        onClose();
+      },
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +62,7 @@ export default function ImportBankStatementModal({
           className={styles.fileInput}
         />
         {file && <span>Размер: {getFileSize(file.size)}</span>}
+        {error && <span>Не удалось загрузить выписку: {error.message}</span>}
 
         <div className={styles.actions}>
           <Button
@@ -64,7 +74,11 @@ export default function ImportBankStatementModal({
             onClick={() => setFile(null)}
             image={TrashIcon}
           />
-          <Button type="submit" isDisabled={!file} image={SaveIcon}>
+          <Button
+            type="submit"
+            isDisabled={!file || isPending}
+            image={SaveIcon}
+          >
             Сохранить
           </Button>
         </div>

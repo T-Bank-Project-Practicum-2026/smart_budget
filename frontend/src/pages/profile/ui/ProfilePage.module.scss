@@ -1,97 +1,88 @@
 .page {
-    max-width: 1024px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 56px;
-    padding: 0px 12px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 56px;
+  padding: 0px 12px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .container {
-    background-color: var(--color-gray-1);
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    justify-content: space-between;
-    padding: 12px;
-    border-radius: 20px;
-    gap: 12px;
+  background-color: var(--color-gray-1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-radius: 20px;
+  gap: 12px;
 }
 
 .info_container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--color-gray-2);
-    padding: 10px;
-    border-radius: 12px;
-    flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-gray-2);
+  padding: 24px;
+  border-radius: 12px;
+  flex: 1;
 }
 
 .row {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    border-bottom: 1px dashed black;
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-bottom: 1px dashed #444444;
 }
 
 .avatar {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background-color: rgb(63, 63, 63);
-    display: block;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.avatar_container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 128px;
-    width: 128px;
-    padding: 10px;
-    aspect-ratio: 1/1;
-    background-color: #131313;
-    border-radius: 12px;
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+  background-color: rgb(63, 63, 63);
+  border-radius: 8px;
+  border: 2px solid black;
+  overflow: hidden;
 }
 
 .skeleton_container {
-    width: 100%;
-    height: 138px;
-    border-radius: 20px;
-    background-color: var(--skeleton-base);
-    background-image: linear-gradient(
-        90deg,
-        var(--skeleton-base) 0%,
-        var(--skeleton-highlight) 50%,
-        var(--skeleton-base) 100%
-    );
-    background-size: var(--skeleton-bg-size);
-    animation: skeleton-shimmer var(--skeleton-duration) var(--skeleton-easing)
-        infinite;
-    overflow: hidden;
+  width: 100%;
+  height: 130px;
+  border-radius: 20px;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(
+    90deg,
+    var(--skeleton-base) 0%,
+    var(--skeleton-highlight) 50%,
+    var(--skeleton-base) 100%
+  );
+  background-size: var(--skeleton-bg-size);
+  animation: skeleton-shimmer var(--skeleton-duration) var(--skeleton-easing)
+    infinite;
+  overflow: hidden;
 }
 
 @keyframes skeleton-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.logout {
 }

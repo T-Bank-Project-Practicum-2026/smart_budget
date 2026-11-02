@@ -11,7 +11,7 @@ export function BudgetPage() {
     <div className={styles.page}>
       <section className={styles.section}>
         <h1>Бюджет на октябрь</h1>
-        <RadialChart />
+        {/* <RadialChart /> */}
       </section>
 
       <section>
@@ -20,7 +20,7 @@ export function BudgetPage() {
 
       <section className={styles.section}>
         <h2>Расходы по категориям в октябре</h2>
-        <CategoryBadgeWrapper />
+        {/* <CategoryBadgeWrapper /> */}
       </section>
 
       <section className={styles.section}>

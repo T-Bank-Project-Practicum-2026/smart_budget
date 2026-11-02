@@ -1,34 +1,7 @@
-import { useEffect, useState } from "react";
-import { me, MeResponseDto } from "../../../shared/api/endpoints/me";
+import { useQuery } from "@tanstack/react-query";
+import { me } from "../../../shared/api/endpoints/me";
+import { QueryKeys } from "../../../shared/api/queryKeys";
 
-export type UseMe = {
-    data: MeResponseDto | null;
-    isLoading: boolean;
-    error: string | null;
-};
-
-export default function useMe() {
-    const [data, setData] = useState<MeResponseDto | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            setError(null);
-
-            const result = await me();
-
-            if (result.success) {
-                setData(result.json);
-            } else {
-                setError(result.error);
-            }
-            setIsLoading(false);
-        };
-
-        fetchData();
-    }, []);
-
-    return { data, isLoading, error } as UseMe;
+export function useMe() {
+  return useQuery({ queryKey: [QueryKeys.me], queryFn: me });
 }

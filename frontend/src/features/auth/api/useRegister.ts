@@ -1,35 +1,12 @@
-import { useState } from "react";
-import { ApiResult } from "../../../shared/api/client";
-import {
-  register,
-  RegisterDto,
-  RegisterResponseDto,
-} from "../../../shared/api/endpoints/register";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { register } from "../../../shared/api/endpoints/register";
+import { QueryKeys } from "../../../shared/api/queryKeys";
 
-export default function useRegister() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+export function useRegister() {
+  const queryClient = useQueryClient();
 
-  const handleRegister = async (
-    dto: RegisterDto,
-  ): Promise<ApiResult<RegisterResponseDto>> => {
-    setIsLoading(true);
-    setError(null);
-
-    const result = await register(dto);
-
-    setIsLoading(false);
-
-    if (!result.success) {
-      setError(result.error || "Произошла ошибка при регистрации");
-    }
-
-    return result;
-  };
-
-  return {
-    register: handleRegister,
-    isLoading,
-    error,
-  };
+  return useMutation({
+    mutationFn: register,
+    onSuccess: (user) => queryClient.setQueryData([QueryKeys.me], user),
+  });
 }

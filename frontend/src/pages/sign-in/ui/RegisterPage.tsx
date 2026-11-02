@@ -6,33 +6,32 @@ import Button from "../../../shared/ui/Button";
 import LoginIcon from "../../../shared/ui/logo/key-round.svg";
 import LockIcon from "../../../shared/ui/logo/lock-keyhole.svg";
 import MailIcon from "../../../shared/ui/logo/mail.svg";
-import { Link } from "react-router-dom";
-import useRegister from "../../../features/auth/api/useRegister";
+import { Link, useNavigate } from "react-router-dom";
+import { useRegister } from "../../../features/auth/api/useRegister";
 
 export function RegisterPage() {
-  const { register, isLoading, error } = useRegister();
+  const navigate = useNavigate();
+
+  const { mutate, isPending, error } = useRegister();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [timezone, setTimezone] = useState<string>("UTC");
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
 
-    const result = await register({ email, password, timezone });
-
-    if (result.success) {
-      console.log("Зарегестрировался:", result.json);
-    } else {
-      console.error("Не Зарегестрировался:", result.error);
-    }
+    mutate(
+      { email, password, timezone },
+      { onSuccess: () => navigate("/profile", { replace: true }) },
+    );
   };
 
   return (
     <div className={styles.page}>
       <h1>Зарегистрировать аккаунт</h1>
       <form className={styles.container} onSubmit={handleSubmit}>
-        {isLoading && (
+        {isPending && (
           <div className={styles.loading}>
             {/* Обновить на крутящуюся штучку */}
             <span>Происходит регестрация...</span>
@@ -63,11 +62,11 @@ export function RegisterPage() {
           <div className={styles.error}>
             <span>Произошла ошибка</span>
             <br />
-            <span>{error}</span>
+            <span>{error.message}</span>
           </div>
         )}
 
-        <Button image={LoginIcon} type="submit" isDisabled={isLoading}>
+        <Button image={LoginIcon} type="submit" isDisabled={isPending}>
           Зарегистрировать
         </Button>
         <Link to={"/login"} className={styles.register}>
