@@ -12,10 +12,11 @@ export function PageSelectMenu() {
         <div className={styles.container}>
           <img src={MenuLogo} alt="Меню" onClick={() => setIsOpen(false)} />
           <div className={styles.selector}>
-            <HeaderButton endpoint="/budget">Бюжет</HeaderButton>
+            <HeaderButton endpoint="/budget">Бюджет</HeaderButton>
             <HeaderButton endpoint="/goals" notification={5}>
               Цели
             </HeaderButton>
+            <HeaderButton endpoint="/profile">Профиль</HeaderButton>
             {/* <HeaderButton endpoint="">Инвестиции</HeaderButton>
                         <HeaderButton endpoint="">Уведомления</HeaderButton> */}
           </div>
