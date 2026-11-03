@@ -1,8 +1,8 @@
 import React from "react";
 import styles from "./Footer.module.scss";
-import HeaderButton from "../HeaderButton";
+import HeaderButton from "../../../shared/ui/HeaderButton";
 
-export default function Footer() {
+export function Footer() {
   return (
     <footer className={styles.container}>
       <HeaderButton endpoint="/login">Вход</HeaderButton>

@@ -9,7 +9,23 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+
+      "@app/*": ["./src/app/*"],
+
+      "@entities/*": ["./src/entities/*"],
+
+      "@features/*": ["./src/features/*"],
+
+      "@pages": ["./src/pages/index.ts"],
+      "@pages/*": ["./src/pages/*"],
+
+      "@shared/*": ["./src/shared/*"],
+
+      "@widgets/*": ["./src/widgets/*"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

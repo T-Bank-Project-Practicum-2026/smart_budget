@@ -1,15 +1,17 @@
-import { useState } from "react";
 import "./styles";
-import { Header } from "../widgets/header";
-import { BudgetPage } from "../pages/budget";
-import Footer from "../shared/ui/Footer";
+
+import { BudgetPage } from "@/pages/budget";
+import { LandingPage } from "@/pages/landing";
+import { GoalsPage } from "@/pages/goals";
+import { LoginPage, RegisterPage } from "@/pages/sign-in";
+import { ProfilePage } from "@/pages/profile";
+
+import { Header } from "@widgets/header";
+import { Footer } from "@/widgets/footer";
+
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { GoalsPage } from "../pages/goals";
-import { AuthPage, RegisterPage } from "../pages/sign-in";
-import { ProfilePage } from "../pages/profile";
-import LandingPage from "../pages/landing";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "../shared/api/queryClient";
+import { queryClient } from "@shared/api/queryClient";
 
 function App() {
   return (
@@ -21,7 +23,7 @@ function App() {
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/budget" element={<BudgetPage />} />
             <Route path="/goals" element={<GoalsPage />} />
-            <Route path="/login" element={<AuthPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>

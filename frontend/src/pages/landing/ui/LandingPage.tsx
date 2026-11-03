@@ -1,7 +1,7 @@
 import Button from "../../../shared/ui/Button";
 import HeaderButton from "../../../shared/ui/HeaderButton";
 
-function LandingPage() {
+export function LandingPage() {
   return (
     <div>
       <HeaderButton endpoint="/login">Вход</HeaderButton>
@@ -10,5 +10,3 @@ function LandingPage() {
     </div>
   );
 }
-
-export default LandingPage;
