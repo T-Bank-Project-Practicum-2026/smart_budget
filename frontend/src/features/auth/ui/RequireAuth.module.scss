@@ -1,0 +1,31 @@
+.page {
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 56px;
+  padding: 0px 12px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--color-gray-2);
+  border-top: 5px solid var(--color-yellow);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
