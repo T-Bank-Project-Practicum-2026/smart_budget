@@ -12,6 +12,7 @@ import { Footer } from "@/widgets/footer";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@shared/api/queryClient";
+import { RequireAuth } from "@features/auth/ui/RequireAuth";
 
 function App() {
   return (
@@ -20,12 +21,14 @@ function App() {
         <BrowserRouter>
           <Header />
           <Routes>
-            <Route path="/landing" element={<LandingPage />} />
-            <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/goals" element={<GoalsPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/budget" element={<BudgetPage />} />
+              <Route path="/goals" element={<GoalsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
           </Routes>
           <Footer />
         </BrowserRouter>
