@@ -1,5 +1,3 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
 import styles from "./ProfilePage.module.scss";
 import UserIcon from "../../../shared/ui/logo/user-round.svg";
 import { useMe } from "../../../features/auth/api/useMe";
@@ -12,8 +10,6 @@ import ProfileActionButtons from "../../../widgets/profile-action-buttons/ui/Pro
 export function ProfilePage() {
   const me = useMe();
   const imports = useImports();
-
-  if (me.error?.status === 401) return <Navigate to="/login" replace />;
 
   return (
     <div className={styles.page}>

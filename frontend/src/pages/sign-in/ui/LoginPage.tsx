@@ -9,7 +9,7 @@ import MailIcon from "../../../shared/ui/logo/mail.svg";
 import { Link, useNavigate } from "react-router-dom";
 import { useLogin } from "../../../features/auth/api/useLogin";
 
-export function AuthPage() {
+export function LoginPage() {
   const { mutate, isPending, error } = useLogin();
   const navigate = useNavigate();
 

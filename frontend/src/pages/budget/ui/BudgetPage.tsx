@@ -4,7 +4,7 @@ import { CategoryBadgeWrapper } from "../../../widgets/CategoryBadgeWrapper";
 import ExpensesWrapper from "../../../shared/ui/ExpensesWrapper/ExpensesWrapper";
 import styles from "./ButgetPage.module.scss";
 import { RadialChartSkeleton } from "../../../widgets/RadialChart/ui/RadialChartSkeleton";
-import ButgetActionButtons from "../../../widgets/butgetActionButtons/ui/ButgetActionButtons";
+import ButgetActionButtons from "../../../widgets/budget-action-buttons/ui/ButgetActionButtons";
 
 export function BudgetPage() {
   return (

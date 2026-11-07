@@ -9,7 +9,7 @@ export function Header() {
     <header className={styles.background}>
       <div className={styles.container}>
         <div className={styles.logo}>
-          <HeaderButton endpoint="/landing">Умный бюджет</HeaderButton>
+          <HeaderButton endpoint="/">Умный бюджет</HeaderButton>
         </div>
         <div className={styles.buttons}>
           <HeaderButton endpoint="/budget">Бюджет</HeaderButton>
