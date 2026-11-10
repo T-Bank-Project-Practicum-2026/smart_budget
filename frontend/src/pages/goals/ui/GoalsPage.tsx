@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import Container from "../../../shared/ui/Container";
-import Goal from "../../../shared/ui/goal";
+import { useState } from "react";
+import Goal from "@shared/ui/goal";
 import styles from "./GoalsPage.module.scss";
 import Button from "@/shared/ui/Button";
 import Plus from "@shared/ui/logo/plus.svg";
@@ -11,6 +10,7 @@ import { CreateGoalModal } from "@/features/create-goal";
 
 export function GoalsPage() {
   const [isOpenModal, setIsOpenModal] = useState<boolean>(false);
+  const [data, setData] = useState([]);
 
   return (
     <div className={styles.page}>
@@ -20,22 +20,42 @@ export function GoalsPage() {
           <Button image={Plus} onClick={() => setIsOpenModal(true)} />
         </div>
       </section>
-      <div className={styles.goals_container}>
-        <Goal
-          image={GoalCar}
-          title="Машина"
-          accumulated={300000}
-          total={1500000}
-          deadline={1825785465}
-        />
-        <Goal
-          image={GoalFlat}
-          title="Квартира"
-          accumulated={12581528}
-          total={100000000}
-          deadline={1725785465}
-        />
-      </div>
+      {data.length === 0 && (
+        <section>
+          <h2 className={styles.example_title}>
+            У вас нет целей. Можно добавить из предложенных
+          </h2>
+          <div className={styles.goals_container}>
+            <Goal
+              image={GoalCar}
+              title="Машина"
+              accumulated={300000}
+              total={1500000}
+              deadline={1825785465}
+              monthly={10000}
+              isExample={true}
+            />
+            <Goal
+              image={GoalFlat}
+              title="Квартира"
+              accumulated={12581528}
+              total={100000000}
+              deadline={1725785465}
+              monthly={120000}
+              isExample={true}
+            />
+            <Goal
+              image={GoalFlat}
+              title="Ноутбук"
+              accumulated={0}
+              total={100000}
+              deadline={1729785465}
+              monthly={10000}
+              isExample={true}
+            />
+          </div>
+        </section>
+      )}
 
       <CreateGoalModal
         isOpen={isOpenModal}

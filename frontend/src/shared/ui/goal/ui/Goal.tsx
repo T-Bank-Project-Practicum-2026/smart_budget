@@ -9,6 +9,8 @@ import Edit from "@shared/ui/logo/square-pen.svg";
 import Button from "../../Button";
 import { CategoryBadge } from "@/entities/category";
 import Percent from "@shared/ui/logo/percent.svg";
+import HandCoins from "@shared/ui/logo/hand-coins.svg";
+import Plus from "@shared/ui/logo/plus.svg";
 
 export type GoalProps = {
   image: string;
@@ -16,6 +18,8 @@ export type GoalProps = {
   deadline: number;
   accumulated: number;
   total: number;
+  monthly: number;
+  isExample?: boolean;
 };
 
 export default function Goal({
@@ -23,7 +27,9 @@ export default function Goal({
   title,
   deadline,
   accumulated,
+  monthly,
   total,
+  isExample = false,
 }: GoalProps) {
   return (
     <div className={styles.container}>
@@ -62,17 +68,32 @@ export default function Goal({
           </div>
           <span>{formatCurrency(total)}</span>
         </div>
+        <div className={styles.row}>
+          <div className={styles.row_title}>
+            <img src={HandCoins} />
+            <span>Рек. взнос:</span>
+          </div>
+          <span>{formatCurrency(monthly)} / месяц</span>
+        </div>
       </div>
 
       <div className={styles.progressbar}>
         <div style={{ width: "3%" }} />
       </div>
 
-      <div className={styles.buttons}>
-        <Button image={BanknoteArrowDown} />
-        <Button image={Edit} />
-        <Button image={Trash} />
-      </div>
+      {isExample === true && (
+        <Button image={Plus} style={styles.example_button}>
+          Добавить цель
+        </Button>
+      )}
+
+      {isExample === false && (
+        <div className={styles.buttons}>
+          <Button image={BanknoteArrowDown} />
+          <Button image={Edit} />
+          <Button image={Trash} />
+        </div>
+      )}
     </div>
   );
 }
