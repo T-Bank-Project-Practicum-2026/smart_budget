@@ -24,9 +24,9 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
             <Route element={<RequireAuth />}>
               <Route path="/budget" element={<BudgetPage />} />
-              <Route path="/goals" element={<GoalsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Routes>

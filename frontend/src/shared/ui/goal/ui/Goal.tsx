@@ -32,7 +32,7 @@ export default function Goal({
       </div>
       <div className={styles.title}>
         <h3>{title}</h3>
-        <CategoryBadge image={Percent} color="#FF0000" title="12.43%" />
+        <CategoryBadge image={Percent} color="#FF0000" title="12.43/100.00" />
       </div>
       <div className={styles.info_container}>
         <div className={styles.row}>
@@ -63,7 +63,11 @@ export default function Goal({
           <span>{formatCurrency(total)}</span>
         </div>
       </div>
-      <progress className={styles.progressbar} value={0.03}></progress>
+
+      <div className={styles.progressbar}>
+        <div style={{ width: "3%" }} />
+      </div>
+
       <div className={styles.buttons}>
         <Button image={BanknoteArrowDown} />
         <Button image={Edit} />
