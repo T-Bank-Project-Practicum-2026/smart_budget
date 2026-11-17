@@ -22,7 +22,7 @@ import (
 // @Success 200 {object} importer.Import "Повторный запрос вернул существующий импорт"
 // @Failure 400 {object} ErrorResponse "Некорректный файл или ключ идемпотентности"
 // @Failure 413 {object} ErrorResponse "Файл больше 10 МиБ"
-// @Failure 409 {object} ErrorResponse "Импорт с этим ключом ещё выполняется"
+// @Failure 409 {object} ErrorResponse "Импорт с этим ключом ещё выполняется (import_in_progress) или X-Account-ID не совпадает с сессией (account_changed)"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/imports/tbank [post]
 func (s *Server) createTBankImport(w http.ResponseWriter, r *http.Request) {

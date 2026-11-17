@@ -574,7 +574,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/server.ErrorResponse'
-          description: Импорт с этим ключом ещё выполняется
+          description: Импорт с этим ключом ещё выполняется (import_in_progress) или
+            X-Account-ID не совпадает с сессией (account_changed)
         "413":
           content:
             application/json:
