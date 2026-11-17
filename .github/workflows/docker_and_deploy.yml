@@ -39,10 +39,10 @@ jobs:
       - name: Smoke test frontend and API proxy
         run: |
           curl --fail --retry 3 http://localhost:3000/ | grep -q 'Smart Budget'
-          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "smart_budget"'
+          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["success"] is True and d["data"]["status"] == "ok" and d["data"]["service"] == "smart_budget"'
 
       - name: Smoke test notifications
-        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "notifications"'
+        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["success"] is True and d["data"]["status"] == "ok" and d["data"]["service"] == "notifications"'
 
       - name: Logs
         if: always()

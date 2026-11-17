@@ -33,8 +33,12 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+func writeSuccess(w http.ResponseWriter, status int, data any) {
+	writeJSON(w, status, SuccessResponse{Success: true, Data: data})
+}
+
 func writeError(w http.ResponseWriter, status int, code string) {
-	writeJSON(w, status, ErrorResponse{Error: code})
+	writeJSON(w, status, ErrorResponse{Success: false, Error: code})
 }
 
 func respondError(w http.ResponseWriter, err error) {
