@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../../../shared/ui/Button";
 import ImportBankStatementModal from "../../../features/importBankStatementModal/ui/ImportBankStatementModal";
 import styles from "./ProfileActionButtons.module.scss";
@@ -29,9 +29,11 @@ export default function ProfileActionButtons() {
         Загрузить выписку
       </Button>
       <Button image={PlusIcon}>Добавить транзакцию</Button>
-      <Button image={LogoutIcon} onClick={() => logoutOnClick()}>
+      <Button image={LogoutIcon} onClick={logoutOnClick} isDisabled={isPending}>
         Выйти
       </Button>
+
+      {error && <span role="alert">Не удалось выйти: {error.message}</span>}
 
       <ImportBankStatementModal
         isOpen={openModal === "upload"}

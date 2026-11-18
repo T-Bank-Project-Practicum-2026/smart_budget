@@ -4,10 +4,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"smart_budget/internal/auth"
+	servicesv1 "smart_budget/internal/gen/smartbudget/services/v1"
+	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
 	"smart_budget/internal/testutil"
 	"strings"
 	"testing"
 	"time"
+
+	"connectrpc.com/connect"
 )
 
 func TestAccountGuardAndServerLogout(t *testing.T) {
@@ -73,18 +77,21 @@ func TestAccountGuardAndServerLogout(t *testing.T) {
 		t.Fatalf("logout: unexpected success body %s", body)
 	}
 
-	req = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/internal/sessions/session-b?userId=b", nil)
-	req.Header.Set("Authorization", "Bearer internal-test")
-	response = httptest.NewRecorder()
-	handler.ServeHTTP(response, req)
-	if response.Code != 401 {
-		t.Fatalf("revoked session: %d", response.Code)
+	rpcServer := httptest.NewServer(handler)
+
+	defer rpcServer.Close()
+
+	client := servicesv1connect.NewAuthServiceClient(rpcServer.Client(), rpcServer.URL)
+	check := connect.NewRequest(&servicesv1.CheckSessionRequest{SessionId: "session-b", UserId: "b"})
+	check.Header().Set("Authorization", "Bearer internal-test")
+	result, err := client.CheckSession(t.Context(), check)
+	if err != nil || result.Msg.Active {
+		t.Fatalf("revoked session: %v %v", result, err)
 	}
 
-	req.Header.Set("Authorization", "Bearer wrong-token")
-	response = httptest.NewRecorder()
-	handler.ServeHTTP(response, req)
-	if response.Code != 403 {
-		t.Fatalf("invalid internal credential must not look like revoked session: %d", response.Code)
+	check.Header().Set("Authorization", "Bearer wrong-token")
+	_, err = client.CheckSession(t.Context(), check)
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("invalid internal credential must not look like revoked session: %v", err)
 	}
 }

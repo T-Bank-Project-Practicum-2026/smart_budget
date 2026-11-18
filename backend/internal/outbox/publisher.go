@@ -57,8 +57,13 @@ func (p *Publisher) PublishOne(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	payload, err := push.Marshal(event)
+	if err != nil {
+		return false, err
+	}
+
 	produceCtx, stopProduce := context.WithTimeout(ctx, 5*time.Second)
-	produceErr := p.Kafka.ProduceSync(produceCtx, &kgo.Record{Topic: p.topic(), Key: []byte(event.UserID), Value: pending.Payload}).FirstErr()
+	produceErr := p.Kafka.ProduceSync(produceCtx, &kgo.Record{Topic: p.topic(), Key: []byte(event.UserID), Value: payload}).FirstErr()
 
 	stopProduce()
 	if produceErr != nil {

@@ -22,6 +22,6 @@ export type Import = {
   totalRows: number;
 };
 
-export function imports() {
-  return GET<Import[]>("/v1/imports");
+export function imports(accountId: string) {
+  return GET<Import[]>("/v1/imports", accountId);
 }

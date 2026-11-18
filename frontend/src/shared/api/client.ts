@@ -31,12 +31,17 @@ async function request<T>(
   method: "GET" | "POST",
   endpoint: string,
   body?: unknown,
+  accountId?: string,
   retried = false,
 ): Promise<T> {
   const headers = new Headers({
     Accept: "application/json",
     "X-CSRF-Protection": "1",
   });
+
+  if (accountId) {
+    headers.set("X-Account-ID", accountId);
+  }
 
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
@@ -75,7 +80,7 @@ async function request<T>(
     !retried &&
     (await refreshSession())
   ) {
-    return request<T>(method, endpoint, body, true);
+    return request<T>(method, endpoint, body, accountId, true);
   }
 
   if (!response.ok || json?.success === false) {
@@ -93,10 +98,14 @@ async function request<T>(
   return json as T;
 }
 
-export function GET<T>(endpoint: string): Promise<T> {
-  return request<T>("GET", endpoint);
+export function GET<T>(endpoint: string, accountId?: string): Promise<T> {
+  return request<T>("GET", endpoint, undefined, accountId);
 }
 
-export function POST<T>(endpoint: string, body?: unknown): Promise<T> {
-  return request<T>("POST", endpoint, body);
+export function POST<T>(
+  endpoint: string,
+  body?: unknown,
+  accountId?: string,
+): Promise<T> {
+  return request<T>("POST", endpoint, body, accountId);
 }

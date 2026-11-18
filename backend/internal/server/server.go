@@ -5,11 +5,15 @@ import (
 	"net/http"
 	"os"
 	"smart_budget/internal/auth"
+	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
 	"smart_budget/internal/importer"
+	"smart_budget/internal/rpc"
 	"smart_budget/internal/swagger"
 	"strconv"
 	"strings"
 	"time"
+
+	"connectrpc.com/connect"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -34,7 +38,7 @@ func (s *Server) Handler() http.Handler {
 		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
 	})
 	mux.Handle("GET /swagger/", swagger.Handler())
-	mux.HandleFunc("GET /internal/sessions/{id}", s.sessionStatus)
+	rpcPath, rpcHandler := servicesv1connect.NewAuthServiceHandler(s, connect.WithInterceptors(rpc.Authenticate(s.Token)), connect.WithReadMaxBytes(8192))
 	mux.HandleFunc("POST /api/v1/auth/register", s.register)
 	mux.HandleFunc("POST /api/v1/auth/login", s.login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", s.refresh)
@@ -52,6 +56,12 @@ func (s *Server) Handler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
+		if strings.HasPrefix(r.URL.Path, rpcPath) {
+			rpcHandler.ServeHTTP(w, r)
+
+			return
+		}
+
 		if r.Method != "GET" && r.Method != "HEAD" {
 			allowed := false
 
@@ -118,11 +128,19 @@ func New(db *pgxpool.Pool) (*Server, error) {
 		}
 	}
 
-	for _, origin := range strings.Split(origins, ",") {
+	allowedOrigins := strings.Split(origins, ",")
+
+	for i, origin := range allowedOrigins {
+		origin = strings.TrimSpace(origin)
+		if origin == "" {
+			return nil, errors.New("APP_ORIGINS must not contain empty origins")
+		}
+
+		allowedOrigins[i] = origin
 		if strings.HasPrefix(origin, "https://") && !secure {
 			return nil, errors.New("HTTPS origins require AUTH_COOKIE_SECURE=true")
 		}
 	}
 
-	return &Server{Auth: service, Imports: imports, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: strings.Split(origins, ","), Client: &http.Client{Timeout: 10 * time.Second}}, nil
+	return &Server{Auth: service, Imports: imports, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: allowedOrigins, Client: &http.Client{Timeout: 10 * time.Second}}, nil
 }

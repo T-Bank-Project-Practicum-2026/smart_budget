@@ -3,8 +3,8 @@ package outbox
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"os"
+	servicesv1 "smart_budget/internal/gen/smartbudget/services/v1"
 	"smart_budget/internal/kafka"
 	"smart_budget/internal/notifications"
 	"smart_budget/internal/push"
@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -68,12 +70,14 @@ func TestQuarantinePublishReplayAndCleanup(t *testing.T) {
 
 	_, err = db.Exec(ctx, `INSERT INTO app.users(id,email,password_hash) VALUES('u','u@example.test','unused');
  INSERT INTO app.notifications(id,user_id,request_key,title,body) VALUES('bad','u','bad','t','b'),('good','u','good','t','b');
- INSERT INTO app.outbox(id,payload,created_at) VALUES('bad','{}',now()-interval '1 minute');`)
+ INSERT INTO app.outbox(id,payload,created_at) VALUES('bad','{}',now()-interval '1 minute');
+ INSERT INTO notifications.subscriptions(id,user_id,endpoint,p256dh,auth,session_id,expires_at)
+ VALUES('sub','u','https://example.test/push','test','test','session',now()+interval '1 hour');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	payload, err := json.Marshal(push.Event{ID: "good", UserID: "u", Title: "test", CreatedAt: time.Now()})
+	payload, err := push.Encode(push.Event{ID: "good", UserID: "u", Title: "test", CreatedAt: time.Now()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,6 +120,11 @@ func TestQuarantinePublishReplayAndCleanup(t *testing.T) {
 		}
 
 		for _, record := range fetches.Records() {
+			message := &servicesv1.NotificationRequested{}
+			if err := proto.Unmarshal(record.Value, message); err != nil || message.Id != "good" || string(record.Key) != "u" {
+				t.Fatalf("Kafka Protobuf contract: %v %v", message, err)
+			}
+
 			if err := svc.Accept(ctx, record); err != nil {
 				t.Fatal(err)
 			}
@@ -124,10 +133,12 @@ func TestQuarantinePublishReplayAndCleanup(t *testing.T) {
 		}
 	}
 
-	var inbox int
+	var inbox, jobs int
 
-	if err = db.QueryRow(ctx, "SELECT count(*) FROM notifications.inbox WHERE id='good'").Scan(&inbox); err != nil || inbox != 1 {
-		t.Fatalf("inbox=%d err=%v", inbox, err)
+	if err = db.QueryRow(ctx, `SELECT
+ (SELECT count(*) FROM notifications.inbox WHERE id='good'),
+ (SELECT count(*) FROM notifications.jobs WHERE event_id='good' AND subscription_id='sub' AND state='pending')`).Scan(&inbox, &jobs); err != nil || inbox != 1 || jobs != 1 {
+		t.Fatalf("inbox=%d jobs=%d err=%v", inbox, jobs, err)
 	}
 
 	if _, err = db.Exec(ctx, "UPDATE app.outbox SET published_at=now()-interval '31 days' WHERE id='good'"); err != nil {

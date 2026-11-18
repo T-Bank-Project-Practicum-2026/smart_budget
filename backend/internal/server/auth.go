@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"smart_budget/internal/auth"
 	"time"
@@ -150,23 +149,6 @@ func (s *Server) identity(r *http.Request) (auth.ActiveSession, error) {
 	}
 
 	return identity, nil
-}
-
-func (s *Server) sessionStatus(w http.ResponseWriter, r *http.Request) {
-	if s.Token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+s.Token)) != 1 {
-		writeError(w, 403, "forbidden")
-
-		return
-	}
-
-	_, err := s.Auth.ActiveSession(r.Context(), r.PathValue("id"), r.URL.Query().Get("userId"))
-	if err != nil {
-		respondError(w, err)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func cookieValue(r *http.Request, name string) string {

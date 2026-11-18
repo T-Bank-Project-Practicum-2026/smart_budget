@@ -3,6 +3,7 @@ module smart_budget
 go 1.27.1
 
 require (
+	connectrpc.com/connect v1.18.1
 	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
@@ -12,6 +13,7 @@ require (
 	github.com/twmb/franz-go/pkg/kmsg v1.14.0
 	golang.org/x/crypto v0.55.0
 	golang.org/x/sync v0.22.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (

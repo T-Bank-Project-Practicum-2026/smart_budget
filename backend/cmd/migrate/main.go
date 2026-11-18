@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -46,6 +47,10 @@ func run() error {
 	db := stdlib.OpenDBFromPool(pool)
 
 	defer func() { _ = db.Close() }()
+
+	if err := requireCurrentHistory(ctx, db); err != nil {
+		return err
+	}
 
 	locker, err := lock.NewPostgresSessionLocker()
 	if err != nil {
@@ -112,6 +117,39 @@ func run() error {
 
 		for _, migration := range status {
 			log.Printf("%s: %s", migration.Source.Path, migration.State)
+		}
+	}
+
+	return nil
+}
+
+func requireCurrentHistory(ctx context.Context, db *sql.DB) error {
+	for _, history := range []struct {
+		table    string
+		baseline int64
+	}{
+		{table: "public.goose_db_version", baseline: 4},
+		{table: "notifications.goose_db_version", baseline: 3},
+	} {
+		var exists bool
+
+		if err := db.QueryRowContext(ctx, "SELECT to_regclass($1) IS NOT NULL", history.table).Scan(&exists); err != nil {
+			return fmt.Errorf("check migration history %s: %w", history.table, err)
+		}
+
+		if !exists {
+			continue
+		}
+
+		var old bool
+
+		query := "SELECT EXISTS (SELECT 1 FROM " + history.table + " WHERE version_id > 0 AND version_id < $1)"
+		if err := db.QueryRowContext(ctx, query, history.baseline).Scan(&old); err != nil {
+			return fmt.Errorf("read migration history %s: %w", history.table, err)
+		}
+
+		if old {
+			return fmt.Errorf("old migration history in %s: this release requires a fresh database (see README)", history.table)
 		}
 	}
 

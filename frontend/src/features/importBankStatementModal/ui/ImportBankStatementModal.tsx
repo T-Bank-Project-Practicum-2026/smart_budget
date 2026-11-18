@@ -57,7 +57,7 @@ export default function ImportBankStatementModal({
         <input
           id="statement-file"
           type="file"
-          accept=".csv,.pdf,.xlsx"
+          accept=".csv,text/csv"
           onChange={handleChange}
           className={styles.fileInput}
         />

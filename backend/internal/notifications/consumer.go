@@ -11,7 +11,8 @@ import (
 )
 
 func (s *Service) Accept(ctx context.Context, record *kgo.Record) error {
-	event, err := push.Decode(record.Value)
+	event, err := push.Unmarshal(record.Value)
+
 	reason := ""
 	if err != nil {
 		reason = "invalid_payload"
@@ -30,6 +31,11 @@ func (s *Service) Accept(ctx context.Context, record *kgo.Record) error {
 		return err
 	}
 
+	payload, err := push.Encode(event)
+	if err != nil {
+		return err
+	}
+
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		return err
@@ -38,7 +44,7 @@ func (s *Service) Accept(ctx context.Context, record *kgo.Record) error {
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	queries := notificationsdb.New(tx)
-	inserted, err := queries.AcceptEvent(ctx, notificationsdb.AcceptEventParams{ID: event.ID, Payload: record.Value})
+	inserted, err := queries.AcceptEvent(ctx, notificationsdb.AcceptEventParams{ID: event.ID, Payload: payload})
 	if err != nil {
 		return err
 	}

@@ -47,6 +47,25 @@ func (q *Queries) FindOperationsByExternalIDs(ctx context.Context, arg FindOpera
 	return items, nil
 }
 
+const getMonthlyExpense = `-- name: GetMonthlyExpense :one
+SELECT COALESCE(sum(-amount_kopecks::numeric), 0)::text AS amount_kopecks
+FROM app.operations
+WHERE user_id=$1 AND month=$2 AND currency='RUB' AND amount_kopecks < 0
+`
+
+type GetMonthlyExpenseParams struct {
+	UserID string
+	Month  pgtype.Date
+}
+
+// Приведение к numeric до смены знака защищает сумму и минимальный bigint.
+func (q *Queries) GetMonthlyExpense(ctx context.Context, arg GetMonthlyExpenseParams) (string, error) {
+	row := q.db.QueryRow(ctx, getMonthlyExpense, arg.UserID, arg.Month)
+	var amount_kopecks string
+	err := row.Scan(&amount_kopecks)
+	return amount_kopecks, err
+}
+
 const insertOperation = `-- name: InsertOperation :exec
 INSERT INTO app.operations(id,user_id,import_id,external_id,occurred_at,month,amount_kopecks,currency,merchant,mcc,row_hash)
 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
