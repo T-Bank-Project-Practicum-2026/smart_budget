@@ -4,6 +4,7 @@ import ShoppingCart from "./shopping-cart.svg";
 import { formatCurrency } from "../../../../shared/lib/format-currency";
 
 export interface CategoryBadgeProps {
+  image?: string;
   color: string;
   title?: string;
   value?: number;
@@ -12,6 +13,7 @@ export interface CategoryBadgeProps {
 }
 
 export function CategoryBadge({
+  image,
   color,
   title,
   value,
@@ -28,7 +30,11 @@ export function CategoryBadge({
       className={`${styles.container} ${className ?? ""}`}
     >
       <div style={{ backgroundColor: color }} className={styles.icon_container}>
-        <img className={styles.icon} src={ShoppingCart} />
+        {image ? (
+          <img className={styles.icon} src={image} />
+        ) : (
+          <img className={styles.icon} src={ShoppingCart} />
+        )}
       </div>
       {title ? <a className={styles.title}>{title}</a> : ""}
       {value ? <a className={styles.value}>{formatCurrency(value)}</a> : ""}

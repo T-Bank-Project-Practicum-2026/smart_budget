@@ -24,10 +24,12 @@ digraph Architecture {
   nginx -> api [label="/api"];
   api -> db [label="SQL"];
   db -> worker [dir=both, label="outbox"];
-  kafka -> worker [dir=back, label="publish"];
-  notifications -> kafka [dir=back, label="consume"];
+  kafka -> worker [dir=back, label="publish Protobuf"];
+  notifications -> kafka [dir=back, label="consume Protobuf"];
   push -> notifications [dir=back, color="#2463A0"];
   push -> web [label="push", color="#2463A0", fontcolor="#2463A0", constraint=false];
+  api -> notifications [label="Subscriptions RPC\nProtobuf", constraint=false];
+  notifications -> api [label="Auth RPC\nProtobuf", constraint=false];
   worker -> bank [label="sync"];
   web -> push [style=invis];
 }

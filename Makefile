@@ -2,14 +2,16 @@
 COMPOSE ?= docker compose
 SQLC_IMAGE := sqlc/sqlc:1.31.1
 SWAGGER_IMAGE := smart-budget-swagger:local
-SWAGGER_DOCKER = docker run --rm --user "$$(id -u):$$(id -g)" -e GOCACHE=/tmp/go-build -e GOPATH=/tmp/go
+PROTO_IMAGE := smart-budget-proto:local
+GENERATOR_DOCKER = docker run --rm --user "$$(id -u):$$(id -g)" -e GOCACHE=/tmp/go-build -e GOPATH=/tmp/go -e XDG_CACHE_HOME=/tmp/cache
 
-.PHONY: generate generate-sql swagger swagger-tool check-swagger check-generated init help up down logs lint lint-fix test migrate migrate-status
+.PHONY: generate generate-sql proto proto-tool check-proto swagger swagger-tool check-swagger check-generated init help up down logs lint lint-fix test migrate migrate-status
 help:
 	@echo "make swagger   Обновить api/openapi.yaml из Go-кода"
 	@echo "make check-swagger  Проверить актуальность OpenAPI"
-	@echo "make generate  Generate SQL queries and OpenAPI documentation"
-	@echo "make check-generated  Check generated SQL queries and OpenAPI are up to date"
+	@echo "make proto     Generate Protobuf messages and RPC clients/handlers"
+	@echo "make generate  Generate SQL queries, Protobuf and OpenAPI documentation"
+	@echo "make check-generated  Check SQL, Protobuf and OpenAPI are up to date"
 	@echo "make init      Generate missing local secrets in .env"
 	@echo "make migrate   Apply SQL migrations"
 	@echo "make migrate-status  Show migration status"
@@ -53,19 +55,28 @@ migrate:
 migrate-status:
 	$(COMPOSE) run --build --rm migrate status
 
-generate: generate-sql swagger
+generate: generate-sql proto swagger
 
 generate-sql:
 	docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR)/backend:/src" -w /src $(SQLC_IMAGE) generate
 
-check-generated: check-swagger
+check-generated: check-swagger check-proto
 	docker run --rm --user "$$(id -u):$$(id -g)" -v "$(CURDIR)/backend:/src:ro" -w /src $(SQLC_IMAGE) diff
 
 swagger-tool:
 	docker build -f scripts/swagger.Dockerfile -t $(SWAGGER_IMAGE) scripts
 
 swagger: swagger-tool
-	$(SWAGGER_DOCKER) -v "$(CURDIR):/workspace" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh generate
+	$(GENERATOR_DOCKER) -v "$(CURDIR):/workspace" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh generate
 
 check-swagger: swagger-tool
-	$(SWAGGER_DOCKER) -v "$(CURDIR):/workspace:ro" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh check
+	$(GENERATOR_DOCKER) -v "$(CURDIR):/workspace:ro" $(SWAGGER_IMAGE) sh ../scripts/openapi.sh check
+
+proto-tool:
+	docker build -f scripts/proto.Dockerfile -t $(PROTO_IMAGE) scripts
+
+proto: proto-tool
+	$(GENERATOR_DOCKER) -v "$(CURDIR):/workspace" $(PROTO_IMAGE) sh scripts/proto.sh generate
+
+check-proto: proto-tool
+	$(GENERATOR_DOCKER) -v "$(CURDIR):/workspace:ro" $(PROTO_IMAGE) sh scripts/proto.sh check

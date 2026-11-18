@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"smart_budget/internal/auth"
 	"time"
@@ -18,7 +17,7 @@ const (
 // @Accept json
 // @Param body body auth.RegisterInput true "Данные пользователя"
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
-// @Success 201 {object} auth.User "Пользователь зарегистрирован"
+// @Success 201 {object} UserResponse "Пользователь зарегистрирован"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Header 201 {string} Set-Cookie "Cookie budget_access и budget_refresh с флагом HttpOnly"
 // @Router /api/v1/auth/register [post]
@@ -39,7 +38,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.setAuthCookies(w, result.Session)
-	writeJSON(w, http.StatusCreated, result.User)
+	writeSuccess(w, http.StatusCreated, result.User)
 }
 
 // @Summary Вход
@@ -48,7 +47,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Param body body auth.LoginInput true "Данные пользователя"
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
-// @Success 200 {object} auth.User "Профиль пользователя"
+// @Success 200 {object} UserResponse "Профиль пользователя"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Header 200 {string} Set-Cookie "Cookie budget_access и budget_refresh с флагом HttpOnly"
 // @Router /api/v1/auth/login [post]
@@ -69,7 +68,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.setAuthCookies(w, result.Session)
-	writeJSON(w, http.StatusOK, result.User)
+	writeSuccess(w, http.StatusOK, result.User)
 }
 
 // @Summary Обновление сессии
@@ -78,9 +77,9 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Security refreshCookie
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Сессия обновлена"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
-// @Header 204 {string} Set-Cookie "Cookie budget_access и budget_refresh с флагом HttpOnly"
+// @Header 200 {string} Set-Cookie "Cookie budget_access и budget_refresh с флагом HttpOnly"
 // @Router /api/v1/auth/refresh [post]
 func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
 	session, err := s.Auth.Refresh(r.Context(), cookieValue(r, refreshCookie))
@@ -91,16 +90,16 @@ func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.setAuthCookies(w, session)
-	w.WriteHeader(http.StatusNoContent)
+	writeSuccess(w, http.StatusOK, nil)
 }
 
 // @Summary Выход
-// @Description Завершает сессию по любой из двух cookie и удаляет обе. Без cookie тоже возвращает 204.
+// @Description Завершает сессию по любой из двух cookie и удаляет обе. Без cookie тоже возвращает успех.
 // @Tags Авторизация
 // @Produce json
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Выполнено"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/auth/logout [post]
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
@@ -112,14 +111,14 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 
 	s.cookie(w, accessCookie, "", -1, "/")
 	s.cookie(w, refreshCookie, "", -1, "/api/v1/auth")
-	w.WriteHeader(http.StatusNoContent)
+	writeSuccess(w, http.StatusOK, nil)
 }
 
 // @Summary Текущий пользователь
 // @Tags Авторизация
 // @Produce json
 // @Security accessCookie
-// @Success 200 {object} auth.User "Профиль пользователя"
+// @Success 200 {object} UserResponse "Профиль пользователя"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/auth/me [get]
 func (s *Server) me(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +129,7 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, user)
+	writeSuccess(w, http.StatusOK, user)
 }
 
 func (s *Server) user(r *http.Request) (string, error) {
@@ -150,23 +149,6 @@ func (s *Server) identity(r *http.Request) (auth.ActiveSession, error) {
 	}
 
 	return identity, nil
-}
-
-func (s *Server) sessionStatus(w http.ResponseWriter, r *http.Request) {
-	if s.Token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+s.Token)) != 1 {
-		writeError(w, 403, "forbidden")
-
-		return
-	}
-
-	_, err := s.Auth.ActiveSession(r.Context(), r.PathValue("id"), r.URL.Query().Get("userId"))
-	if err != nil {
-		respondError(w, err)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func cookieValue(r *http.Request, name string) string {

@@ -10,26 +10,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type AppBankConnection struct {
-	ID         string
-	UserID     string
-	Provider   string
-	ExternalID string
-	CreatedAt  time.Time
-}
-
-type AppTransaction struct {
-	ID               string
-	UserID           string
-	BankConnectionID string
-	ExternalID       string
-	Month            pgtype.Date
-	OccurredAt       time.Time
-	Kind             string
-	AmountKopecks    int64
-	Currency         string
-	Merchant         string
-	Mcc              pgtype.Text
-	Description      string
-	CreatedAt        time.Time
+type AppImport struct {
+	ID              string
+	UserID          string
+	IdempotencyKey  pgtype.Text
+	FileName        string
+	FileHash        string
+	Status          string
+	TotalRows       int32
+	ImportedRows    int32
+	SkippedRows     int32
+	DuplicateRows   int32
+	ConflictRows    int32
+	FailedRows      int32
+	Errors          []byte
+	ErrorsTruncated bool
+	CreatedAt       time.Time
+	FinishedAt      *time.Time
 }

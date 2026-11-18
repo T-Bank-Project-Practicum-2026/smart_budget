@@ -1,9 +1,9 @@
 name: Docker CI and Deploy to NSTU server
 on:
   push:
-    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'proto/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
   pull_request:
-    paths: ['compose.yaml', 'Makefile', 'api/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
+    paths: ['compose.yaml', 'Makefile', 'api/**', 'proto/**', 'scripts/**', 'backend/**', 'frontend/**', '.github/workflows/docker_and_deploy.yml']
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check generated SQL queries and OpenAPI
+      - name: Check generated SQL queries, Protobuf and OpenAPI
         run: make check-generated
 
       - name: Configure local environment
@@ -39,10 +39,10 @@ jobs:
       - name: Smoke test frontend and API proxy
         run: |
           curl --fail --retry 3 http://localhost:3000/ | grep -q 'Smart Budget'
-          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "smart_budget"'
+          curl --fail http://localhost:3000/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["success"] is True and d["data"]["status"] == "ok" and d["data"]["service"] == "smart_budget"'
 
       - name: Smoke test notifications
-        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] == "ok" and d["service"] == "notifications"'
+        run: docker compose exec -T notifications wget -qO- http://127.0.0.1:8080/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["success"] is True and d["data"]["status"] == "ok" and d["data"]["service"] == "notifications"'
 
       - name: Logs
         if: always()

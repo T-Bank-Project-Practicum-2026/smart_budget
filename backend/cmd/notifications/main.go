@@ -66,7 +66,7 @@ func run() error {
 	}
 	defer db.Close()
 
-	client, err := kafka.NewClient(strings.Split(settings["KAFKA_BROKERS"], ","), kgo.ClientID("notifications"), kgo.ConsumerGroup("notifications-v1"), kgo.ConsumeTopics(push.Topic), kgo.DisableAutoCommit(), kgo.BlockRebalanceOnPoll())
+	client, err := kafka.NewClient(strings.Split(settings["KAFKA_BROKERS"], ","), kgo.ClientID("notifications"), kgo.ConsumerGroup("notifications-v2"), kgo.ConsumeTopics(push.Topic), kgo.DisableAutoCommit(), kgo.BlockRebalanceOnPoll())
 	if err != nil {
 		return err
 	}
