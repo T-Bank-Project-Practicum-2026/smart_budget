@@ -78,11 +78,16 @@ async function request<T>(
     return request<T>(method, endpoint, body, true);
   }
 
-  if (!response.ok) {
+  if (!response.ok || json?.success === false) {
+    const code = typeof json?.error === "string" ? json.error : null;
     const message = String(
-      json?.message ?? json?.error ?? (text || response.statusText),
+      code ?? json?.message ?? (text || response.statusText),
     );
-    throw new ApiError(response.status, message, json?.error ?? null);
+    throw new ApiError(response.status, message, code);
+  }
+
+  if (json?.success === true) {
+    return json.data as T;
   }
 
   return json as T;

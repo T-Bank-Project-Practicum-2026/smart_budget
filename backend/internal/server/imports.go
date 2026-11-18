@@ -18,11 +18,11 @@ import (
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param Idempotency-Key header string false "Ключ идемпотентности" minLength(16) maxLength(100)
 // @Param file formData file true "CSV-выписка T-Bank, не больше 10 МиБ"
-// @Success 201 {object} importer.Import "Импорт создан"
-// @Success 200 {object} importer.Import "Повторный запрос вернул существующий импорт"
+// @Success 201 {object} ImportResponse "Импорт создан"
+// @Success 200 {object} ImportResponse "Повторный запрос вернул существующий импорт"
 // @Failure 400 {object} ErrorResponse "Некорректный файл или ключ идемпотентности"
 // @Failure 413 {object} ErrorResponse "Файл больше 10 МиБ"
-// @Failure 409 {object} ErrorResponse "Импорт с этим ключом ещё выполняется"
+// @Failure 409 {object} ErrorResponse "Импорт с этим ключом ещё выполняется (import_in_progress) или X-Account-ID не совпадает с сессией (account_changed)"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/imports/tbank [post]
 func (s *Server) createTBankImport(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func (s *Server) createTBankImport(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusOK
 	}
 
-	writeJSON(w, status, imported)
+	writeSuccess(w, status, imported)
 }
 
 // @Summary История импортов
@@ -65,7 +65,7 @@ func (s *Server) createTBankImport(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security accessCookie
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
-// @Success 200 {array} importer.Import "Список импортов"
+// @Success 200 {object} ImportsResponse "Список импортов"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/imports [get]
 func (s *Server) listImports(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func (s *Server) listImports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, imports)
+	writeSuccess(w, http.StatusOK, imports)
 }
 
 // @Summary Импорт по ID
@@ -92,7 +92,7 @@ func (s *Server) listImports(w http.ResponseWriter, r *http.Request) {
 // @Security accessCookie
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param id path string true "ID импорта"
-// @Success 200 {object} importer.Import "Импорт"
+// @Success 200 {object} ImportResponse "Импорт"
 // @Failure 404 {object} ErrorResponse "Импорт не найден"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/imports/{id} [get]
@@ -111,7 +111,7 @@ func (s *Server) getImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, imported)
+	writeSuccess(w, http.StatusOK, imported)
 }
 
 func readTBankFile(w http.ResponseWriter, r *http.Request) ([]byte, string, error) {

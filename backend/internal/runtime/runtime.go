@@ -38,8 +38,9 @@ func LogError(operation string, err error) {
 
 // @Summary Готовность API
 // @Tags Состояние сервиса
-// @Success 204 "Выполнено, без тела ответа"
-// @Failure 503 "PostgreSQL недоступен"
+// @Produce json
+// @Success 200 {object} ReadyResponse "Сервис готов"
+// @Failure 503 {object} ErrorResponse "PostgreSQL недоступен"
 // @Router /api/ready [get]
 func Ready(check func(context.Context) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -48,12 +49,12 @@ func Ready(check func(context.Context) error) http.HandlerFunc {
 		defer cancel()
 
 		if err := check(ctx); err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
+			WriteError(w, http.StatusServiceUnavailable, "service_unavailable")
 
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		WriteSuccess(w, http.StatusOK, ReadyData{Status: "ok"})
 	}
 }
 
@@ -102,9 +103,47 @@ func Serve(ctx context.Context, handler http.Handler, workers ...func(context.Co
 	return group.Wait()
 }
 
-type HealthResponse struct {
+type SuccessResponse struct {
+	Success bool `json:"success" example:"true"`
+	Data    any  `json:"data"`
+}
+
+type ErrorResponse struct {
+	Success bool   `json:"success" example:"false"`
+	Error   string `json:"error" example:"service_unavailable"`
+}
+
+type HealthData struct {
 	Status  string `json:"status" example:"ok"`
 	Service string `json:"service" example:"smart_budget"`
+}
+
+type HealthResponse struct {
+	Success bool       `json:"success" example:"true"`
+	Data    HealthData `json:"data"`
+}
+
+type ReadyData struct {
+	Status string `json:"status" example:"ok"`
+}
+
+type ReadyResponse struct {
+	Success bool      `json:"success" example:"true"`
+	Data    ReadyData `json:"data"`
+}
+
+func writeJSON(w http.ResponseWriter, status int, value any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(value)
+}
+
+func WriteSuccess(w http.ResponseWriter, status int, data any) {
+	writeJSON(w, status, SuccessResponse{Success: true, Data: data})
+}
+
+func WriteError(w http.ResponseWriter, status int, code string) {
+	writeJSON(w, status, ErrorResponse{Success: false, Error: code})
 }
 
 // @Summary Проверка API
@@ -114,7 +153,6 @@ type HealthResponse struct {
 // @Router /api/health [get]
 func Health(service string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(HealthResponse{Status: "ok", Service: service})
+		WriteSuccess(w, http.StatusOK, HealthData{Status: "ok", Service: service})
 	}
 }

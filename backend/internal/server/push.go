@@ -23,7 +23,7 @@ import (
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param body body SubscriptionInput true "Push-подписка"
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Подписка сохранена"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/push/subscription [put]
 func (s *Server) subscribe(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func (s *Server) subscribe(w http.ResponseWriter, r *http.Request) {
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param body body UnsubscribeInput true "Push-подписка"
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Подписка удалена"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/push/subscription [delete]
 func (s *Server) unsubscribe(w http.ResponseWriter, r *http.Request) {
@@ -48,10 +48,10 @@ func (s *Server) unsubscribe(w http.ResponseWriter, r *http.Request) {
 // @Summary Публичный VAPID-ключ
 // @Tags Push-уведомления
 // @Produce json
-// @Success 200 {object} PublicKeyResponse "Публичный ключ"
+// @Success 200 {object} PublicKeySuccessResponse "Публичный ключ"
 // @Router /api/v1/push/key [get]
 func (s *Server) publicKey(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, PublicKeyResponse{PublicKey: s.PublicKey})
+	writeSuccess(w, http.StatusOK, PublicKeyResponse{PublicKey: s.PublicKey})
 }
 
 func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 
 	switch resp.StatusCode {
 	case http.StatusNoContent:
-		w.WriteHeader(http.StatusNoContent)
+		writeSuccess(w, http.StatusOK, nil)
 
 	case http.StatusBadRequest:
 		writeError(w, 400, "invalid_subscription")
@@ -114,7 +114,7 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param Idempotency-Key header string true "Ключ идемпотентности" minLength(16) maxLength(100)
-// @Success 202 {object} QueuedResponse "Уведомление в очереди"
+// @Success 202 {object} QueuedSuccessResponse "Уведомление в очереди"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/notifications/test [post]
 func (s *Server) send(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +152,7 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 
 	previous, err := queries.FindNotification(r.Context(), apidb.FindNotificationParams{UserID: user, RequestKey: key})
 	if err == nil {
-		writeJSON(w, 202, QueuedResponse{ID: previous, Status: "queued"})
+		writeSuccess(w, 202, QueuedResponse{ID: previous, Status: "queued"})
 
 		return
 	}
@@ -201,7 +201,7 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, 202, QueuedResponse{ID: event.ID, Status: "queued"})
+	writeSuccess(w, 202, QueuedResponse{ID: event.ID, Status: "queued"})
 }
 
 // @Summary Последние 20 уведомлений
@@ -210,7 +210,7 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security accessCookie
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
-// @Success 200 {array} push.Event "Список уведомлений"
+// @Success 200 {object} NotificationsResponse "Список уведомлений"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/notifications [get]
 func (s *Server) list(w http.ResponseWriter, r *http.Request) {
@@ -234,5 +234,5 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 		events = append(events, push.Event{ID: row.ID, Title: row.Title, Body: row.Body, CreatedAt: row.CreatedAt})
 	}
 
-	writeJSON(w, 200, events)
+	writeSuccess(w, 200, events)
 }

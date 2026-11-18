@@ -47,6 +47,11 @@ func TestAccountGuardAndServerLogout(t *testing.T) {
 		if response.Code != http.StatusConflict {
 			t.Fatalf("%s: status %d", path, response.Code)
 		}
+
+		body := response.Body.String()
+		if !strings.Contains(body, `"success":false`) || !strings.Contains(body, `"error":"account_changed"`) {
+			t.Fatalf("%s: unexpected error body %s", path, body)
+		}
 	}
 
 	if _, err = service.ActiveSession(t.Context(), "session-b", "b"); err != nil {
@@ -60,8 +65,12 @@ func TestAccountGuardAndServerLogout(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: accessCookie, Value: access})
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
-	if response.Code != 204 {
+	if response.Code != http.StatusOK {
 		t.Fatalf("logout: %d", response.Code)
+	}
+
+	if body := response.Body.String(); !strings.Contains(body, `"success":true`) || !strings.Contains(body, `"data":null`) {
+		t.Fatalf("logout: unexpected success body %s", body)
 	}
 
 	req = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/internal/sessions/session-b?userId=b", nil)
