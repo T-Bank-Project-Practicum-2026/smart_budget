@@ -24,7 +24,7 @@ func Required(name string) (string, error) {
 	return value, nil
 }
 
-// LogError records error classes, never SQL text, endpoint URLs or credentials.
+// LogError опускает текст ошибки, потому что в нём могут быть SQL или секреты.
 func LogError(operation string, err error) {
 	var pgErr *pgconn.PgError
 

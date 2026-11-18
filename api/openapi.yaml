@@ -1,4 +1,4 @@
-# Сгенерировано командой. Не редактируйте вручную.
+# Чтобы обновить этот файл, запустите make swagger.
 components:
   schemas:
     auth.LoginInput:

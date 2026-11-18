@@ -15,7 +15,7 @@ if [ "$mode" = check ]; then
   }
 else
   mkdir -p "$target"
-  # This directory contains generated contracts only; remove obsolete outputs too.
+  # Удаляем и те файлы, которые buf больше не генерирует.
   find "$target" -name '*.go' -delete
   cp -R "$output"/. "$target"/
 fi

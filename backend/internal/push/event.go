@@ -12,7 +12,6 @@ import (
 
 const Topic = "notifications.requested.v2"
 
-// Event is the browser REST model; interservice contracts are generated from .proto.
 type Event struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"userId"`
@@ -21,7 +20,7 @@ type Event struct {
 	CreatedAt time.Time `json:"createdAt" format:"date-time"`
 }
 
-// Encode stores the generated contract as ProtoJSON in the existing jsonb outbox.
+// Encode готовит ProtoJSON для хранения в outbox.
 func Encode(event Event) ([]byte, error) {
 	message := event.message()
 	if err := validate(message); err != nil {
@@ -31,7 +30,6 @@ func Encode(event Event) ([]byte, error) {
 	return protojson.Marshal(message)
 }
 
-// Decode reads the ProtoJSON stored in PostgreSQL.
 func Decode(data []byte) (Event, error) {
 	message := &servicesv1.NotificationRequested{}
 	if len(data) > 8192 {
@@ -45,7 +43,7 @@ func Decode(data []byte) (Event, error) {
 	return fromMessage(message)
 }
 
-// Marshal encodes the Kafka wire payload as binary Protobuf.
+// Marshal готовит бинарное Protobuf-сообщение для Kafka.
 func Marshal(event Event) ([]byte, error) {
 	message := event.message()
 	if err := validate(message); err != nil {

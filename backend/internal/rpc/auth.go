@@ -10,7 +10,6 @@ import (
 	"connectrpc.com/connect"
 )
 
-// Authenticate protects generated internal RPC handlers independently of browser CSRF.
 func Authenticate(token string) connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {

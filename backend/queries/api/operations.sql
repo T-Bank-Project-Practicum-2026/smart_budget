@@ -11,7 +11,7 @@ SELECT id,external_id,occurred_at,month,amount_kopecks,currency,merchant,mcc,imp
 FROM app.operations WHERE user_id=$1 ORDER BY occurred_at DESC, id DESC LIMIT 100;
 
 -- name: GetMonthlyExpense :one
--- Приведение к numeric до смены знака защищает сумму и минимальный bigint.
+-- У минимального bigint модуль уже не помещается в bigint, поэтому сначала приводим к numeric.
 SELECT COALESCE(sum(-amount_kopecks::numeric), 0)::text AS amount_kopecks
 FROM app.operations
 WHERE user_id=$1 AND month=$2 AND currency='RUB' AND amount_kopecks < 0;

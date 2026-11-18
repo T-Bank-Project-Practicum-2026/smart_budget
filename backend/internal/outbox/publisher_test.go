@@ -101,7 +101,7 @@ func TestQuarantinePublishReplayAndCleanup(t *testing.T) {
 		t.Fatalf("quarantine=%v err=%v", quarantined, err)
 	}
 
-	// Simulate a crash after broker acknowledgement but before the DB mark.
+	// Брокер уже принял событие, но worker упал до записи published_at.
 	if _, err = db.Exec(ctx, "UPDATE app.outbox SET published_at=NULL WHERE id='good'"); err != nil {
 		t.Fatal(err)
 	}

@@ -58,7 +58,7 @@ type GetMonthlyExpenseParams struct {
 	Month  pgtype.Date
 }
 
-// Приведение к numeric до смены знака защищает сумму и минимальный bigint.
+// У минимального bigint модуль уже не помещается в bigint, поэтому сначала приводим к numeric.
 func (q *Queries) GetMonthlyExpense(ctx context.Context, arg GetMonthlyExpenseParams) (string, error) {
 	row := q.db.QueryRow(ctx, getMonthlyExpense, arg.UserID, arg.Month)
 	var amount_kopecks string

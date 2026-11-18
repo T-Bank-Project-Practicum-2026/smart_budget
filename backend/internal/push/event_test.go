@@ -37,7 +37,7 @@ func TestEventWireAndStoredRoundTrip(t *testing.T) {
 		t.Fatalf("generated contract: %v %v", message, err)
 	}
 
-	// New fields from a newer producer must not break existing consumers.
+	// Так выглядит сообщение от новой версии worker с ещё одним полем.
 	wire = protowire.AppendTag(wire, 100, protowire.VarintType)
 	wire = protowire.AppendVarint(wire, 1)
 	decoded, err = Unmarshal(wire)
