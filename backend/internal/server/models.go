@@ -60,7 +60,6 @@ type QueuedResponse struct {
 	Status string `json:"status" enums:"queued"`
 }
 
-// Тело подписки передаётся в notifications без изменений.
 type SubscriptionInput struct {
 	Endpoint string `json:"endpoint" format:"uri" maxLength:"4096"`
 	Keys     struct {

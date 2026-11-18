@@ -14,7 +14,7 @@ swag init \
   --dir internal/server,internal/auth,internal/importer,internal/push,internal/runtime,internal/tbankcsv \
   --parseInternal --requiredByDefault --outputTypes yaml \
   --output "$output"
-{ echo '# Сгенерировано командой. Не редактируйте вручную.'; cat "$output/swagger.yaml"; } > "$output/openapi.yaml"
+{ echo '# Чтобы обновить этот файл, запустите make swagger.'; cat "$output/swagger.yaml"; } > "$output/openapi.yaml"
 
 if [ "$mode" = check ]; then
   diff -u ../api/openapi.yaml "$output/openapi.yaml" || {

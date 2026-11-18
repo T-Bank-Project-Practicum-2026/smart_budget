@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-// CheckSession asks the auth owner; unavailability never permits delivery.
+// CheckSession возвращает ошибку, если API не смог подтвердить статус сессии.
 func (s *Service) CheckSession(ctx context.Context, userID, sessionID string) (bool, error) {
 	if s.SessionURL == "" || s.Token == "" || sessionID == "" {
 		return false, errors.New("session check is not configured")

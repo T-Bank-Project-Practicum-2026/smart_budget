@@ -88,7 +88,7 @@ func TestOperationsFromCSV(t *testing.T) {
 		t.Fatalf("other account operations: %+v, %v", rows, err)
 	}
 
-	// Force a failure during audit insertion, after the operation has been inserted.
+	// Ошибка при записи аудита должна откатить и саму операцию.
 	_, err = pool.Exec(ctx, `ALTER TABLE app.audit_log ADD CONSTRAINT reject_new_audit CHECK (false) NOT VALID`)
 	if err != nil {
 		t.Fatal(err)

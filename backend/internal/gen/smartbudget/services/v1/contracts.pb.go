@@ -326,7 +326,7 @@ func (*DeleteSubscriptionResponse) Descriptor() ([]byte, []int) {
 	return file_smartbudget_services_v1_contracts_proto_rawDescGZIP(), []int{5}
 }
 
-// Значение Kafka-записи notifications.requested.v2; ключ — user_id.
+// В топике notifications.requested.v2 ключом сообщения служит user_id.
 type NotificationRequested struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

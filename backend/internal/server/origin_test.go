@@ -42,7 +42,7 @@ func TestConfiguredOrigins(t *testing.T) {
 		{"wrong CSRF", "http://localhost:3000", "0", http.StatusForbidden},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// POST to a GET-only route proves the CSRF gate passed without changing data.
+			// Если CSRF-проверка пропустила запрос, POST на /api/health вернёт 405.
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/health", nil)
 			req.Header.Set("Origin", tc.origin)
 			req.Header.Set("X-CSRF-Protection", tc.csrf)

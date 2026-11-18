@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "smart_budget/internal/gen/smartbudget/services/v1;servicesv1";
 
-// Проверка сессии у владельца данных авторизации.
+// Перед отправкой push сервис notifications проверяет сессию через API.
 service AuthService {
   rpc CheckSession(CheckSessionRequest) returns (CheckSessionResponse);
 }
@@ -20,7 +20,7 @@ message CheckSessionResponse {
   bool active = 1;
 }
 
-// Управление подписками принадлежит notifications.
+// Через этот сервис API сохраняет и удаляет подписки в notifications.
 service SubscriptionsService {
   rpc UpsertSubscription(UpsertSubscriptionRequest) returns (UpsertSubscriptionResponse);
   rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse);
@@ -44,7 +44,7 @@ message DeleteSubscriptionRequest {
 
 message DeleteSubscriptionResponse {}
 
-// Значение Kafka-записи notifications.requested.v2; ключ — user_id.
+// В топике notifications.requested.v2 ключом сообщения служит user_id.
 message NotificationRequested {
   string id = 1;
   string user_id = 2;

@@ -118,7 +118,6 @@ func TestSubscriptionRPCAndPublicAdapter(t *testing.T) {
 		t.Fatal("subscription retained")
 	}
 
-	// The public JSON endpoint must write the generated contract atomically and remain idempotent.
 	for range 2 {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/notifications/test", nil)
 		request.Header.Set("Origin", "http://localhost:3000")
