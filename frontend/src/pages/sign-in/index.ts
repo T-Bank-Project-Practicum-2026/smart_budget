@@ -1,2 +1,2 @@
-export { AuthPage } from "./ui/LoginPage";
+export { LoginPage } from "./ui/LoginPage";
 export { RegisterPage } from "./ui/RegisterPage";

@@ -11,7 +11,7 @@ import (
 // @Produce json
 // @Security accessCookie
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
-// @Success 200 {array} importer.Operation "Список операций"
+// @Success 200 {object} OperationsResponse "Список операций"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/operations [get]
 func (s *Server) listOperations(w http.ResponseWriter, r *http.Request) {
@@ -31,5 +31,5 @@ func (s *Server) listOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, operations)
+	writeSuccess(w, http.StatusOK, operations)
 }

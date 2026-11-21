@@ -3,13 +3,15 @@ package notifications
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/url"
+	servicesv1 "smart_budget/internal/gen/smartbudget/services/v1"
+	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
+	"smart_budget/internal/rpc"
 	"time"
+
+	"connectrpc.com/connect"
 )
 
-// CheckSession asks the auth owner; no browser tab or access cookie is needed.
-// Unavailability is an error, never permission to send.
+// CheckSession возвращает ошибку, если API не смог подтвердить статус сессии.
 func (s *Service) CheckSession(ctx context.Context, userID, sessionID string) (bool, error) {
 	if s.SessionURL == "" || s.Token == "" || sessionID == "" {
 		return false, errors.New("session check is not configured")
@@ -19,32 +21,13 @@ func (s *Service) CheckSession(ctx context.Context, userID, sessionID string) (b
 
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.SessionURL+"/internal/sessions/"+url.PathEscape(sessionID)+"?userId="+url.QueryEscape(userID), nil)
+	client := servicesv1connect.NewAuthServiceClient(rpc.Client(s.SessionClient), s.SessionURL)
+	req := connect.NewRequest(&servicesv1.CheckSessionRequest{UserId: userID, SessionId: sessionID})
+	req.Header().Set("Authorization", "Bearer "+s.Token)
+	response, err := client.CheckSession(ctx, req)
 	if err != nil {
 		return false, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.Token)
-	client := s.SessionClient
-	if client == nil {
-		client = &http.Client{Timeout: 3 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
-	}
-
-	response, err := client.Do(req)
-	if err != nil {
-		return false, err
-	}
-
-	defer func() { _ = response.Body.Close() }()
-
-	switch response.StatusCode {
-	case http.StatusNoContent:
-		return true, nil
-
-	case http.StatusUnauthorized:
-		return false, nil
-
-	default:
-		return false, errors.New("session check unavailable")
-	}
+	return response.Msg.Active, nil
 }

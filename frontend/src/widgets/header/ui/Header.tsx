@@ -9,10 +9,10 @@ export function Header() {
     <header className={styles.background}>
       <div className={styles.container}>
         <div className={styles.logo}>
-          <HeaderButton endpoint="/landing">Умный бюджет</HeaderButton>
+          <HeaderButton endpoint="/">Умный бюджет</HeaderButton>
         </div>
         <div className={styles.buttons}>
-          <HeaderButton endpoint="/budget">Бюжет</HeaderButton>
+          <HeaderButton endpoint="/budget">Бюджет</HeaderButton>
           <HeaderButton endpoint="/goals" notification={5}>
             Цели
           </HeaderButton>

@@ -1,22 +1,111 @@
 const BASE_URL = "/api";
 
-export async function apiRequest<T>(
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+    public code: string | null = null,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  refreshPromise ??= fetch(`${BASE_URL}/v1/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "X-CSRF-Protection": "1" },
+  })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
+}
+
+async function request<T>(
+  method: "GET" | "POST",
   endpoint: string,
-  options: RequestInit = {},
+  body?: unknown,
+  accountId?: string,
+  retried = false,
 ): Promise<T> {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
+  const headers = new Headers({
+    Accept: "application/json",
+    "X-CSRF-Protection": "1",
   });
 
-  if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.statusText}`);
+  if (accountId) {
+    headers.set("X-Account-ID", accountId);
   }
 
-  if (response.status === 204) return undefined as T;
+  let payload: BodyInit | undefined;
+  if (body instanceof FormData) {
+    payload = body;
+  } else if (body !== undefined) {
+    headers.set("Content-Type", "application/json");
+    payload = JSON.stringify(body);
+  }
 
-  return response.json() as Promise<T>;
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: payload,
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(0, "Нет соединения с сервером");
+  }
+
+  const text = await response.text();
+  let json: any = null;
+  if (text !== "") {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // не json - текст пригодится для сообщения об ошибке
+    }
+  }
+
+  // Токен старый
+  if (
+    response.status === 401 &&
+    json?.error === "authentication_required" &&
+    !retried &&
+    (await refreshSession())
+  ) {
+    return request<T>(method, endpoint, body, accountId, true);
+  }
+
+  if (!response.ok || json?.success === false) {
+    const code = typeof json?.error === "string" ? json.error : null;
+    const message = String(
+      code ?? json?.message ?? (text || response.statusText),
+    );
+    throw new ApiError(response.status, message, code);
+  }
+
+  if (json?.success === true) {
+    return json.data as T;
+  }
+
+  return json as T;
+}
+
+export function GET<T>(endpoint: string, accountId?: string): Promise<T> {
+  return request<T>("GET", endpoint, undefined, accountId);
+}
+
+export function POST<T>(
+  endpoint: string,
+  body?: unknown,
+  accountId?: string,
+): Promise<T> {
+  return request<T>("POST", endpoint, body, accountId);
 }

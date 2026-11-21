@@ -29,7 +29,7 @@ func (q *Queries) AcceptEvent(ctx context.Context, arg AcceptEventParams) (int64
 const createDeliveryJobs = `-- name: CreateDeliveryJobs :exec
 INSERT INTO notifications.jobs(event_id,subscription_id)
 SELECT $1::text,id FROM notifications.subscriptions
-WHERE user_id=$2 AND expires_at>now() AND session_id<>''
+WHERE user_id=$2 AND expires_at>now()
 `
 
 type CreateDeliveryJobsParams struct {

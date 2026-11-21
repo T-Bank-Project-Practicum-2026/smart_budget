@@ -15,7 +15,7 @@ services:
       POSTGRES_DB: smart_budget
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - postgres_data:${POSTGRES_VOLUME_TARGET:-/var/lib/postgresql}
+      - postgres_baseline_data:${POSTGRES_VOLUME_TARGET:-/var/lib/postgresql}
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d smart_budget']
       interval: 5s
@@ -63,7 +63,7 @@ services:
       - --set
       - redpanda.auto_create_topics_enabled=false
     volumes:
-      - redpanda_data:/var/lib/redpanda/data
+      - redpanda_baseline_data:/var/lib/redpanda/data
     healthcheck:
       test: ['CMD', 'rpk', 'cluster', 'info', '-X', 'brokers=127.0.0.1:9092']
       interval: 10s
@@ -78,7 +78,7 @@ services:
       kafka:
         condition: service_healthy
     entrypoint: ['rpk']
-    command: ['topic', 'create', 'notifications.requested.v1', '--if-not-exists', '--partitions', '3', '--replicas', '1', '-X', 'brokers=kafka:9092']
+    command: ['topic', 'create', 'notifications.requested.v2', '--if-not-exists', '--partitions', '3', '--replicas', '1', '-X', 'brokers=kafka:9092']
 
   worker:
     build:
@@ -208,8 +208,8 @@ services:
     command: ['npm ci && npm run lint']
 
 volumes:
-  postgres_data:
-  redpanda_data:
+  postgres_baseline_data:
+  redpanda_baseline_data:
   go_modules:
   go_build:
   go_lint:

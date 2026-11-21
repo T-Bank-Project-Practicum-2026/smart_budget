@@ -20,9 +20,9 @@
   background-color: var(--color-gray-1);
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  padding: 24px;
   border-radius: 20px;
   gap: 12px;
 }
@@ -33,19 +33,9 @@
   align-items: center;
   justify-content: center;
   background-color: var(--color-gray-2);
-  flex: 1;
-  padding: 10px;
+  padding: 24px;
   border-radius: 12px;
-}
-
-.avatar {
-  display: block;
-  border-radius: 100%;
-  flex-shrink: 0;
-  align-self: center;
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
+  flex: 1;
 }
 
 .row {
@@ -55,4 +45,44 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  border-bottom: 1px dashed #444444;
+}
+
+.avatar {
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+  background-color: rgb(63, 63, 63);
+  border-radius: 8px;
+  border: 2px solid black;
+  overflow: hidden;
+}
+
+.skeleton_container {
+  width: 100%;
+  height: 130px;
+  border-radius: 20px;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(
+    90deg,
+    var(--skeleton-base) 0%,
+    var(--skeleton-highlight) 50%,
+    var(--skeleton-base) 100%
+  );
+  background-size: var(--skeleton-bg-size);
+  animation: skeleton-shimmer var(--skeleton-duration) var(--skeleton-easing)
+    infinite;
+  overflow: hidden;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.logout {
 }

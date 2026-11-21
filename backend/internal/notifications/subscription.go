@@ -3,18 +3,18 @@ package notifications
 import (
 	"context"
 	"crypto/ecdh"
-	"crypto/rand"
-	"crypto/subtle"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
 	"net/url"
-	"smart_budget/internal/db/notificationsdb"
+	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
+	"smart_budget/internal/rpc"
 	app "smart_budget/internal/runtime"
 	"strings"
 	"time"
+
+	"connectrpc.com/connect"
 
 	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -93,83 +93,7 @@ func (s *Service) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", app.Health("notifications"))
 	mux.HandleFunc("GET /api/ready", app.Ready(s.DB.Ping))
-	mux.HandleFunc("/internal/subscriptions", func(w http.ResponseWriter, r *http.Request) {
-		if subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+s.Token)) != 1 || s.Token == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-
-			return
-		}
-
-		user := r.Header.Get("X-User-ID")
-		if user == "" || len(user) > 100 {
-			http.Error(w, "invalid user", 400)
-
-			return
-		}
-
-		if r.Method != "PUT" && r.Method != "DELETE" {
-			w.WriteHeader(405)
-
-			return
-		}
-
-		var sub webpush.Subscription
-
-		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&sub) != nil {
-			http.Error(w, "invalid subscription", 400)
-
-			return
-		}
-
-		if r.Method == "DELETE" {
-			if sub.Endpoint == "" {
-				w.WriteHeader(400)
-
-				return
-			}
-
-			if err := notificationsdb.New(s.DB).DeleteUserSubscription(r.Context(), notificationsdb.DeleteUserSubscriptionParams{UserID: user, Endpoint: sub.Endpoint}); err != nil {
-				app.LogError("subscriptions.delete", err)
-				w.WriteHeader(503)
-
-				return
-			}
-
-			w.WriteHeader(204)
-
-			return
-		}
-
-		if ValidateSubscription(sub) != nil {
-			http.Error(w, "invalid subscription", 400)
-
-			return
-		}
-
-		sessionID := r.Header.Get("X-Session-ID")
-		expires, err := time.Parse(time.RFC3339Nano, r.Header.Get("X-Session-Expires"))
-		if err != nil || sessionID == "" || len(sessionID) > 100 || !expires.After(time.Now()) {
-			http.Error(w, "invalid session", 400)
-
-			return
-		}
-
-		affected, err := notificationsdb.New(s.DB).UpsertSubscription(r.Context(), notificationsdb.UpsertSubscriptionParams{ID: rand.Text(), UserID: user, Endpoint: sub.Endpoint, P256dh: sub.Keys.P256dh, Auth: sub.Keys.Auth, SessionID: sessionID, ExpiresAt: expires})
-		if err != nil {
-			app.LogError("subscriptions.upsert", err)
-			w.WriteHeader(503)
-
-			return
-		}
-
-		if affected == 0 {
-			w.WriteHeader(409)
-
-			return
-		}
-
-		w.WriteHeader(204)
-	})
+	mux.Handle(servicesv1connect.NewSubscriptionsServiceHandler(s, connect.WithInterceptors(rpc.Authenticate(s.Token)), connect.WithReadMaxBytes(8192)))
 
 	return mux
 }

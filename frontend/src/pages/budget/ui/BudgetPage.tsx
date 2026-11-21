@@ -4,14 +4,14 @@ import { CategoryBadgeWrapper } from "../../../widgets/CategoryBadgeWrapper";
 import ExpensesWrapper from "../../../shared/ui/ExpensesWrapper/ExpensesWrapper";
 import styles from "./ButgetPage.module.scss";
 import { RadialChartSkeleton } from "../../../widgets/RadialChart/ui/RadialChartSkeleton";
-import ButgetActionButtons from "../../../widgets/butgetActionButtons/ui/ButgetActionButtons";
+import ButgetActionButtons from "../../../widgets/budget-action-buttons/ui/ButgetActionButtons";
 
 export function BudgetPage() {
   return (
     <div className={styles.page}>
       <section className={styles.section}>
         <h1>Бюджет на октябрь</h1>
-        <RadialChart />
+        {/* <RadialChart /> */}
       </section>
 
       <section>
@@ -20,7 +20,7 @@ export function BudgetPage() {
 
       <section className={styles.section}>
         <h2>Расходы по категориям в октябре</h2>
-        <CategoryBadgeWrapper />
+        {/* <CategoryBadgeWrapper /> */}
       </section>
 
       <section className={styles.section}>

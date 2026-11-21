@@ -116,8 +116,7 @@ func (s *Service) DeliverOne(ctx context.Context) (bool, error) {
 		return remove("expired_session")
 	}
 
-	// A provider may deliver an already accepted message after logout. Keep its
-	// payload neutral; account details are available only through authenticated API.
+	// Push может прийти уже после выхода из аккаунта, поэтому детали показываем только в приложении.
 	body, _ := json.Marshal(map[string]string{"id": event.ID, "title": "Умный бюджет", "body": "У вас новое уведомление. Откройте приложение, чтобы прочитать его.", "url": "/"})
 	sendCtx, stopSend := context.WithTimeout(ctx, 10*time.Second)
 	response, sendErr := webpush.SendNotificationWithContext(sendCtx, body, &sub, &webpush.Options{HTTPClient: s.HTTPClient, Subscriber: s.Subject, VAPIDPublicKey: s.PublicKey, VAPIDPrivateKey: s.PrivateKey, TTL: ttl, Topic: event.ID})
