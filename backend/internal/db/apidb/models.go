@@ -10,6 +10,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AppGoal struct {
+	ID             string
+	UserID         string
+	Name           string
+	TargetKopecks  int64
+	CurrentKopecks int64
+	Deadline       *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type AppImport struct {
 	ID              string
 	UserID          string

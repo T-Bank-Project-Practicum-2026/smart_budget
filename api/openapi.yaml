@@ -53,6 +53,52 @@ components:
       - id
       - timezone
       type: object
+    goals.CreateInput:
+      properties:
+        deadline:
+          type: string
+        name:
+          type: string
+        targetKopecks:
+          type: integer
+      required:
+      - name
+      - targetKopecks
+      type: object
+    goals.Goal:
+      properties:
+        createdAt:
+          type: string
+        currentKopecks:
+          type: integer
+        deadline:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        recommendedMonthlyKopecks:
+          type: integer
+        targetKopecks:
+          type: integer
+        updatedAt:
+          type: string
+      required:
+      - createdAt
+      - currentKopecks
+      - id
+      - name
+      - recommendedMonthlyKopecks
+      - targetKopecks
+      - updatedAt
+      type: object
+    goals.ProgressInput:
+      properties:
+        amountKopecks:
+          type: integer
+      required:
+      - amountKopecks
+      type: object
     importer.Import:
       properties:
         conflictRows:
@@ -444,6 +490,168 @@ paths:
       summary: Регистрация
       tags:
       - Авторизация
+  /api/v1/goals:
+    get:
+      description: Возвращает все цели пользователя с расчётом рекомендуемого ежемесячного
+        взноса.
+      parameters:
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/goals.Goal'
+                type: array
+          description: Список целей
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Список целей пользователя
+      tags:
+      - Цели
+    post:
+      description: Создаёт финансовую цель (до 1 000 000 рублей в копейках, максимум
+        10 целей на пользователя).
+      parameters:
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/goals.CreateInput'
+              description: Параметры цели
+              summary: body
+        description: Параметры цели
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/goals.Goal'
+          description: Цель создана
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Создать цель накопления
+      tags:
+      - Цели
+  /api/v1/goals/{id}:
+    delete:
+      description: Удаляет финансовую цель пользователя.
+      parameters:
+      - description: ID цели
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Выполнено, без тела ответа
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Удалить цель
+      tags:
+      - Цели
+  /api/v1/goals/{id}/progress:
+    patch:
+      description: Увеличивает текущий прогресс накопления цели на указанную сумму
+        в копейках.
+      parameters:
+      - description: ID цели
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Защита от CSRF
+        in: header
+        name: X-CSRF-Protection
+        required: true
+        schema:
+          enum:
+          - "1"
+          type: string
+      - description: ID пользователя. Если не совпадает с сессией — ошибка 409
+        in: header
+        name: X-Account-ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/goals.ProgressInput'
+              description: Сумма пополнения в копейках
+              summary: body
+        description: Сумма пополнения в копейках
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/goals.Goal'
+          description: Обновлённая цель
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.ErrorResponse'
+          description: Ошибка запроса
+      security:
+      - accessCookie: []
+      summary: Пополнить цель
+      tags:
+      - Цели
   /api/v1/imports:
     get:
       description: Возвращает последние 50 импортов пользователя, сначала новые.

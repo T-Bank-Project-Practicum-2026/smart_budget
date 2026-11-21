@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"smart_budget/internal/auth"
+	"smart_budget/internal/goals"
 	"smart_budget/internal/importer"
 	app "smart_budget/internal/runtime"
 	"smart_budget/internal/tbankcsv"
@@ -84,6 +85,24 @@ func respondError(w http.ResponseWriter, err error) {
 
 	case errors.Is(err, tbankcsv.ErrInvalidHeader), errors.Is(err, tbankcsv.ErrInvalidCSV):
 		writeError(w, 400, "invalid_tbank_csv")
+
+	case errors.Is(err, goals.ErrInvalidGoalName):
+		writeError(w, 400, "invalid_goal_name")
+
+	case errors.Is(err, goals.ErrInvalidGoalAmount):
+		writeError(w, 400, "invalid_goal_amount")
+
+	case errors.Is(err, goals.ErrDeadlineInPast):
+		writeError(w, 400, "deadline_in_past")
+
+	case errors.Is(err, goals.ErrMaxGoalsReached):
+		writeError(w, 400, "max_goals_reached")
+
+	case errors.Is(err, goals.ErrGoalLimitExceeded):
+		writeError(w, 400, "goal_limit_exceeded")
+
+	case errors.Is(err, goals.ErrGoalNotFound):
+		writeError(w, 404, "goal_not_found")
 
 	default:
 		app.LogError("api.request", err)
