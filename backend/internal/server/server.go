@@ -6,6 +6,7 @@ import (
 	"os"
 	"smart_budget/internal/auth"
 	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
+	"smart_budget/internal/goals"
 	"smart_budget/internal/importer"
 	"smart_budget/internal/rpc"
 	"smart_budget/internal/swagger"
@@ -23,6 +24,7 @@ import (
 type Server struct {
 	Auth                               *auth.Service
 	Imports                            *importer.Service
+	Goals                              *goals.Service
 	SecureCookies                      bool
 	DB                                 *pgxpool.Pool
 	NotificationsURL, Token, PublicKey string
@@ -48,6 +50,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/imports", s.listImports)
 	mux.HandleFunc("GET /api/v1/imports/{id}", s.getImport)
 	mux.HandleFunc("GET /api/v1/operations", s.listOperations)
+	mux.HandleFunc("POST /api/v1/goals", s.createGoal)
+	mux.HandleFunc("GET /api/v1/goals", s.listGoals)
+	mux.HandleFunc("PATCH /api/v1/goals/{id}/progress", s.addGoalProgress)
+	mux.HandleFunc("DELETE /api/v1/goals/{id}", s.deleteGoal)
 	mux.HandleFunc("GET /api/v1/push/key", s.publicKey)
 	mux.HandleFunc("PUT /api/v1/push/subscription", s.subscribe)
 	mux.HandleFunc("DELETE /api/v1/push/subscription", s.unsubscribe)
@@ -119,6 +125,7 @@ func New(db *pgxpool.Pool) (*Server, error) {
 	}
 
 	imports := importer.New(db)
+	goalsService := goals.New(db)
 
 	secure := false
 	if value := os.Getenv("AUTH_COOKIE_SECURE"); value != "" {
@@ -142,5 +149,5 @@ func New(db *pgxpool.Pool) (*Server, error) {
 		}
 	}
 
-	return &Server{Auth: service, Imports: imports, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: allowedOrigins, Client: &http.Client{Timeout: 10 * time.Second}}, nil
+	return &Server{Auth: service, Imports: imports, Goals: goalsService, SecureCookies: secure, DB: db, NotificationsURL: url, Token: token, PublicKey: key, Origins: allowedOrigins, Client: &http.Client{Timeout: 10 * time.Second}}, nil
 }
