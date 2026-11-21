@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL CONSTRAINT unique_category_name UNIQUE
@@ -687,10 +686,10 @@ INSERT INTO mcc_codes (mcc_code, name, category_id) VALUES
                                                         ('9406', 'Правительственные услуги', 33),
                                                         ('9411', 'Государственные услуги', 33)
     ON CONFLICT (mcc_code) DO NOTHING;
--- +goose StatementEnd
+SELECT setval(pg_get_serial_sequence('categories', 'id'), coalesce(max(id), 1), max(id) IS NOT NULL) FROM categories;
+GRANT SELECT ON categories, mcc_codes TO budget_api;
+
 
 -- +goose Down
--- +goose StatementBegin
 DROP TABLE IF EXISTS mcc_codes;
 DROP TABLE IF EXISTS categories;
--- +goose StatementEnd
