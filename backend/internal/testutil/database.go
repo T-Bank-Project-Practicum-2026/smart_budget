@@ -1,4 +1,4 @@
-// Package testutil provides isolated databases for integration tests.
+// Package testutil создаёт для каждого теста отдельную базу с миграциями.
 package testutil
 
 import (

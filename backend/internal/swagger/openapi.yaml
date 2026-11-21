@@ -1,4 +1,4 @@
-# Сгенерировано командой. Не редактируйте вручную.
+# Чтобы обновить этот файл, запустите make swagger.
 components:
   schemas:
     auth.LoginInput:
@@ -210,7 +210,19 @@ components:
       - title
       - userId
       type: object
-    runtime.HealthResponse:
+    runtime.ErrorResponse:
+      properties:
+        error:
+          example: service_unavailable
+          type: string
+        success:
+          example: false
+          type: boolean
+      required:
+      - error
+      - success
+      type: object
+    runtime.HealthData:
       properties:
         service:
           example: smart_budget
@@ -222,12 +234,100 @@ components:
       - service
       - status
       type: object
+    runtime.HealthResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/runtime.HealthData'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    runtime.ReadyData:
+      properties:
+        status:
+          example: ok
+          type: string
+      required:
+      - status
+      type: object
+    runtime.ReadyResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/runtime.ReadyData'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
     server.ErrorResponse:
       properties:
         error:
+          example: invalid_request
           type: string
+        success:
+          example: false
+          type: boolean
       required:
       - error
+      - success
+      type: object
+    server.ImportResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/importer.Import'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    server.ImportsResponse:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/importer.Import'
+          type: array
+          uniqueItems: false
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    server.NotificationsResponse:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/push.Event'
+          type: array
+          uniqueItems: false
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    server.OperationsResponse:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/importer.Operation'
+          type: array
+          uniqueItems: false
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
       type: object
     server.PublicKeyResponse:
       properties:
@@ -235,6 +335,17 @@ components:
           type: string
       required:
       - publicKey
+      type: object
+    server.PublicKeySuccessResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/server.PublicKeyResponse'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
       type: object
     server.QueuedResponse:
       properties:
@@ -247,6 +358,17 @@ components:
       required:
       - id
       - status
+      type: object
+    server.QueuedSuccessResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/server.QueuedResponse'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
       type: object
     server.SubscriptionInput:
       properties:
@@ -268,6 +390,16 @@ components:
       - endpoint
       - keys
       type: object
+    server.SuccessResponse:
+      properties:
+        data: {}
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
     server.UnsubscribeInput:
       properties:
         endpoint:
@@ -275,6 +407,17 @@ components:
           type: string
       required:
       - endpoint
+      type: object
+    server.UserResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/auth.User'
+        success:
+          example: true
+          type: boolean
+      required:
+      - data
+      - success
       type: object
     tbankcsv.RowError:
       properties:
@@ -320,9 +463,17 @@ paths:
   /api/ready:
     get:
       responses:
-        "204":
-          description: Выполнено, без тела ответа
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/runtime.ReadyResponse'
+          description: Сервис готов
         "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/runtime.ErrorResponse'
           description: PostgreSQL недоступен
       summary: Готовность API
       tags:
@@ -352,7 +503,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/auth.User'
+                $ref: '#/components/schemas/server.UserResponse'
           description: Профиль пользователя
           headers:
             Set-Cookie:
@@ -371,7 +522,7 @@ paths:
   /api/v1/auth/logout:
     post:
       description: Завершает сессию по любой из двух cookie и удаляет обе. Без cookie
-        тоже возвращает 204.
+        тоже возвращает успех.
       parameters:
       - description: Защита от CSRF
         in: header
@@ -387,8 +538,12 @@ paths:
         schema:
           type: string
       responses:
-        "204":
-          description: Выполнено, без тела ответа
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.SuccessResponse'
+          description: Выполнено
         default:
           content:
             application/json:
@@ -405,7 +560,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/auth.User'
+                $ref: '#/components/schemas/server.UserResponse'
           description: Профиль пользователя
         default:
           content:
@@ -431,8 +586,12 @@ paths:
           - "1"
           type: string
       responses:
-        "204":
-          description: Выполнено, без тела ответа
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.SuccessResponse'
+          description: Сессия обновлена
           headers:
             Set-Cookie:
               description: Cookie budget_access и budget_refresh с флагом HttpOnly
@@ -474,7 +633,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/auth.User'
+                $ref: '#/components/schemas/server.UserResponse'
           description: Пользователь зарегистрирован
           headers:
             Set-Cookie:
@@ -666,9 +825,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/importer.Import'
-                type: array
+                $ref: '#/components/schemas/server.ImportsResponse'
           description: Список импортов
         default:
           content:
@@ -700,7 +857,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/importer.Import'
+                $ref: '#/components/schemas/server.ImportResponse'
           description: Импорт
         "404":
           content:
@@ -763,13 +920,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/importer.Import'
+                $ref: '#/components/schemas/server.ImportResponse'
           description: Повторный запрос вернул существующий импорт
         "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/importer.Import'
+                $ref: '#/components/schemas/server.ImportResponse'
           description: Импорт создан
         "400":
           content:
@@ -782,7 +939,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/server.ErrorResponse'
-          description: Импорт с этим ключом ещё выполняется
+          description: Импорт с этим ключом ещё выполняется (import_in_progress) или
+            X-Account-ID не совпадает с сессией (account_changed)
         "413":
           content:
             application/json:
@@ -814,9 +972,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/push.Event'
-                type: array
+                $ref: '#/components/schemas/server.NotificationsResponse'
           description: Список уведомлений
         default:
           content:
@@ -860,7 +1016,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/server.QueuedResponse'
+                $ref: '#/components/schemas/server.QueuedSuccessResponse'
           description: Уведомление в очереди
         default:
           content:
@@ -888,9 +1044,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/importer.Operation'
-                type: array
+                $ref: '#/components/schemas/server.OperationsResponse'
           description: Список операций
         default:
           content:
@@ -910,7 +1064,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/server.PublicKeyResponse'
+                $ref: '#/components/schemas/server.PublicKeySuccessResponse'
           description: Публичный ключ
       summary: Публичный VAPID-ключ
       tags:
@@ -941,8 +1095,12 @@ paths:
         description: Push-подписка
         required: true
       responses:
-        "204":
-          description: Выполнено, без тела ответа
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.SuccessResponse'
+          description: Подписка удалена
         default:
           content:
             application/json:
@@ -979,8 +1137,12 @@ paths:
         description: Push-подписка
         required: true
       responses:
-        "204":
-          description: Выполнено, без тела ответа
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.SuccessResponse'
+          description: Подписка сохранена
         default:
           content:
             application/json:

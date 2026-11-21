@@ -5,7 +5,6 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -68,7 +67,7 @@ func subscriptionFixture(t *testing.T, db *pgxpool.Pool, id string) {
 
 func eventRecord(t *testing.T, id string, created time.Time) *kgo.Record {
 	t.Helper()
-	body, err := json.Marshal(push.Event{ID: id, UserID: "u", Title: "private-title", Body: "private-body", CreatedAt: created})
+	body, err := push.Marshal(push.Event{ID: id, UserID: "u", Title: "private-title", Body: "private-body", CreatedAt: created})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,16 +1,22 @@
 package server
 
 import (
-	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"smart_budget/internal/db/apidb"
+	servicesv1 "smart_budget/internal/gen/smartbudget/services/v1"
+	"smart_budget/internal/gen/smartbudget/services/v1/servicesv1connect"
 	"smart_budget/internal/push"
+	"smart_budget/internal/rpc"
 	app "smart_budget/internal/runtime"
 	"time"
+
+	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -23,7 +29,7 @@ import (
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param body body SubscriptionInput true "Push-подписка"
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Подписка сохранена"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/push/subscription [put]
 func (s *Server) subscribe(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +44,7 @@ func (s *Server) subscribe(w http.ResponseWriter, r *http.Request) {
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param body body UnsubscribeInput true "Push-подписка"
-// @Success 204 "Выполнено, без тела ответа"
+// @Success 200 {object} SuccessResponse "Подписка удалена"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/push/subscription [delete]
 func (s *Server) unsubscribe(w http.ResponseWriter, r *http.Request) {
@@ -48,10 +54,10 @@ func (s *Server) unsubscribe(w http.ResponseWriter, r *http.Request) {
 // @Summary Публичный VAPID-ключ
 // @Tags Push-уведомления
 // @Produce json
-// @Success 200 {object} PublicKeyResponse "Публичный ключ"
+// @Success 200 {object} PublicKeySuccessResponse "Публичный ключ"
 // @Router /api/v1/push/key [get]
 func (s *Server) publicKey(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, PublicKeyResponse{PublicKey: s.PublicKey})
+	writeSuccess(w, http.StatusOK, PublicKeyResponse{PublicKey: s.PublicKey})
 }
 
 func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
@@ -62,46 +68,45 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 8192))
-	if err != nil {
+	var input SubscriptionInput
+
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192))
+	if decoder.Decode(&input) != nil || !errors.Is(decoder.Decode(&struct{}{}), io.EOF) {
 		writeError(w, 400, "invalid_subscription")
 
 		return
 	}
 
-	req, err := http.NewRequestWithContext(r.Context(), r.Method, s.NotificationsURL+"/internal/subscriptions", bytes.NewReader(body))
-	if err != nil {
-		writeError(w, 503, "service_unavailable")
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+
+	defer cancel()
+
+	client := servicesv1connect.NewSubscriptionsServiceClient(rpc.Client(s.Client), s.NotificationsURL)
+	if r.Method == http.MethodDelete {
+		req := connect.NewRequest(&servicesv1.DeleteSubscriptionRequest{UserId: identity.UserID, Endpoint: input.Endpoint})
+		req.Header().Set("Authorization", "Bearer "+s.Token)
+		_, err = client.DeleteSubscription(ctx, req)
+	} else {
+		req := connect.NewRequest(&servicesv1.UpsertSubscriptionRequest{UserId: identity.UserID, SessionId: identity.ID, SessionExpiresAt: timestamppb.New(identity.ExpiresAt), Endpoint: input.Endpoint, P256Dh: input.Keys.P256dh, Auth: input.Keys.Auth})
+		req.Header().Set("Authorization", "Bearer "+s.Token)
+		_, err = client.UpsertSubscription(ctx, req)
+	}
+
+	if err == nil {
+		writeSuccess(w, http.StatusOK, nil)
 
 		return
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.Token)
-	req.Header.Set("X-User-ID", identity.UserID)
-	req.Header.Set("X-Session-ID", identity.ID)
-	req.Header.Set("X-Session-Expires", identity.ExpiresAt.Format(time.RFC3339Nano))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		app.LogError("subscriptions.proxy", err)
-		writeError(w, 503, "service_unavailable")
-
-		return
-	}
-
-	defer func() { _ = resp.Body.Close() }()
-
-	switch resp.StatusCode {
-	case http.StatusNoContent:
-		w.WriteHeader(http.StatusNoContent)
-
-	case http.StatusBadRequest:
+	switch connect.CodeOf(err) {
+	case connect.CodeInvalidArgument:
 		writeError(w, 400, "invalid_subscription")
 
-	case http.StatusConflict:
+	case connect.CodeAlreadyExists:
 		writeError(w, 409, "subscription_conflict")
 
 	default:
+		app.LogError("subscriptions.rpc", err)
 		writeError(w, 503, "service_unavailable")
 	}
 }
@@ -114,10 +119,11 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) {
 // @Param X-CSRF-Protection header string true "Защита от CSRF" Enums(1)
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
 // @Param Idempotency-Key header string true "Ключ идемпотентности" minLength(16) maxLength(100)
-// @Success 202 {object} QueuedResponse "Уведомление в очереди"
+// @Success 202 {object} QueuedSuccessResponse "Уведомление в очереди"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/notifications/test [post]
 func (s *Server) send(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	user, err := s.user(r)
 	if err != nil {
 		respondError(w, err)
@@ -133,26 +139,26 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 	}
 
 	event := push.Event{ID: rand.Text(), UserID: user, Title: "Умный бюджет", Body: "Тестовое уведомление. Всё работает!", CreatedAt: time.Now().UTC()}
-	tx, err := s.DB.Begin(r.Context())
+	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	defer func() { _ = tx.Rollback(r.Context()) }()
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	queries := apidb.New(tx)
-	last, err := queries.LockPushUser(r.Context(), user)
+	last, err := queries.LockPushUser(ctx, user)
 	if err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	previous, err := queries.FindNotification(r.Context(), apidb.FindNotificationParams{UserID: user, RequestKey: key})
+	previous, err := queries.FindNotification(ctx, apidb.FindNotificationParams{UserID: user, RequestKey: key})
 	if err == nil {
-		writeJSON(w, 202, QueuedResponse{ID: previous, Status: "queued"})
+		writeSuccess(w, 202, QueuedResponse{ID: previous, Status: "queued"})
 
 		return
 	}
@@ -170,38 +176,38 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload, err := json.Marshal(event)
+	payload, err := push.Encode(event)
 	if err != nil {
 		writeError(w, 500, "notification_failed")
 
 		return
 	}
 
-	if err := queries.CreateNotification(r.Context(), apidb.CreateNotificationParams{ID: event.ID, UserID: user, RequestKey: key, Title: event.Title, Body: event.Body}); err != nil {
+	if err := queries.CreateNotification(ctx, apidb.CreateNotificationParams{ID: event.ID, UserID: user, RequestKey: key, Title: event.Title, Body: event.Body}); err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	if err := queries.EnqueueNotification(r.Context(), apidb.EnqueueNotificationParams{ID: event.ID, Payload: payload}); err != nil {
+	if err := queries.EnqueueNotification(ctx, apidb.EnqueueNotificationParams{ID: event.ID, Payload: payload}); err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	if err := queries.RecordPushTime(r.Context(), user); err != nil {
+	if err := queries.RecordPushTime(ctx, user); err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	if err := tx.Commit(r.Context()); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		respondError(w, err)
 
 		return
 	}
 
-	writeJSON(w, 202, QueuedResponse{ID: event.ID, Status: "queued"})
+	writeSuccess(w, 202, QueuedResponse{ID: event.ID, Status: "queued"})
 }
 
 // @Summary Последние 20 уведомлений
@@ -210,7 +216,7 @@ func (s *Server) send(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security accessCookie
 // @Param X-Account-ID header string false "ID пользователя. Если не совпадает с сессией — ошибка 409"
-// @Success 200 {array} push.Event "Список уведомлений"
+// @Success 200 {object} NotificationsResponse "Список уведомлений"
 // @Failure default {object} ErrorResponse "Ошибка запроса"
 // @Router /api/v1/notifications [get]
 func (s *Server) list(w http.ResponseWriter, r *http.Request) {
@@ -234,5 +240,5 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 		events = append(events, push.Event{ID: row.ID, Title: row.Title, Body: row.Body, CreatedAt: row.CreatedAt})
 	}
 
-	writeJSON(w, 200, events)
+	writeSuccess(w, 200, events)
 }
